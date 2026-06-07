@@ -297,8 +297,17 @@ def ask(query, context, history):
         return f"⚠️ 오류: {err[:150]}"
 
 def get_policies():
+    """폴더명을 번호 순서대로 정렬 (1. 2. 10. 11. 순서 보장)"""
     if not POLICIES_DIR.exists(): return []
-    return sorted([d.name for d in POLICIES_DIR.iterdir() if d.is_dir()])
+    dirs = [d.name for d in POLICIES_DIR.iterdir() if d.is_dir()]
+    def sort_key(name):
+        m = re.match(r'^(\d+)', name)
+        return (int(m.group(1)), name) if m else (9999, name)
+    return sorted(dirs, key=sort_key)
+
+def policy_display(name):
+    """폴더명 → 사이드바 표시용 레이블 (하이픈 → 공백, 번호 그대로)"""
+    return name.replace("-", " ")
 
 # ── 소스 타입 아이콘/배지 ────────────────────────────────────
 def src_icon(stype):
@@ -334,7 +343,7 @@ with st.sidebar:
 
     selected_policy = st.radio(
         "📂 정책 선택", policies,
-        format_func=lambda x: x.replace("-", " "))
+        format_func=policy_display)
     st.divider()
 
     # 관리자 로그인
@@ -424,7 +433,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown(f"##### 📂 {selected_policy.replace('-', ' ')}")
+st.markdown(f"##### 📂 {policy_display(selected_policy)}")
 
 # 탭 구성 (관리자에게는 소스 관리 탭 추가)
 if st.session_state.is_admin:
