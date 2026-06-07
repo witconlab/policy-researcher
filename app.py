@@ -425,63 +425,63 @@ def load_pdfs(policy):
         except: pass
     return docs
 
-def get_chunks(query, src_dict, max_chars=60000):
+def get_chunks(query, src_dict, max_chars=25000):
+    """키워드 관련도 높은 소스만 골라 25,000자 이내로 컨텍스트 구성"""
     kws = [w for w in query.lower().split() if len(w) > 1]
     scored = sorted(
         [(sum(tx.lower().count(k) for k in kws), nm, tx) for nm, tx in src_dict.items()],
         reverse=True)
     parts, total = [], 0
     for _, nm, tx in scored:
-        chunk = f"[출처: {nm}]\n{tx[:8000]}\n"
+        chunk = f"[출처: {nm}]\n{tx[:3500]}\n"   # 소스당 3,500자로 제한
         if total + len(chunk) > max_chars: break
         parts.append(chunk); total += len(chunk)
     return "\n---\n".join(parts)
 
-def ask(query, context, history):
-    sys_prompt = f"""You must respond ONLY in Korean (한국어). Never use any other language including English, Vietnamese, Chinese, or Japanese. All responses must be written entirely in Korean.
+TOKKI_SYSTEM = """You must respond ONLY in Korean (한국어). Never use any other language.
 
 당신은 '톡톡이'입니다. 전남광주 통합특별시 시민을 위한 자치 정책 매니저예요.
+반드시 한국어로만 답변해요. 소스가 외국어여도 답변은 항상 한국어로 작성해요.
 
-[언어 규칙 — 절대 원칙]
-- 반드시 한국어로만 답변해요. 영어, 베트남어, 중국어 등 다른 언어는 절대 사용하지 않아요.
-- 소스 문서가 외국어로 되어 있어도 답변은 반드시 한국어로만 작성해요.
+[톤앤매너]
+1. 첫 문장은 공감 리액션: "좋은 질문이에요! ✨", "아, 궁금하셨군요! 😊"
+2. 어려운 용어는 쉬운 한국어로 풀어서 설명해요.
+3. 친근한 해요체: ~에요, ~해요, ~해보세요.
+4. 이모지를 자연스럽게 활용해요 😊 ✨ 💡 🌱
+5. 마지막엔 따뜻한 맺음말을 붙여요.
 
-[정체성]
-- 이름: 톡톡이 🤖
-- 역할: 전남광주 통합특별시 시민 곁에서 정책을 쉽고 친근하게 안내해 드리는 자치 정책 매니저
-- 성격: 따뜻하고 다정하며, 어려운 말 없이 쉽게 설명하는 친구 같은 매니저
+[원칙]
+- 소스 문서 내용만 참고해서 답변해요.
+- 소스에 없으면 "제가 가진 자료에서는 확인이 어렵네요 😅"
+- 비교 질문엔 표를 활용해요."""
 
-[답변 톤앤매너 규칙 — 반드시 지켜줘]
-1. 경청과 공감: 답변 첫 문장은 반드시 공감 리액션으로 시작해요.
-   예) "아, 그 부분이 궁금하셨군요! 😊", "좋은 질문이에요! ✨"
-2. 쉬운 언어: 어려운 행정 용어·한자어·영어는 반드시 한국어로 풀어 설명해요.
-3. 해요체 사용: "~에요/이에요", "~해요", "~해보세요!" 같은 친근한 해요체로 말해요.
-4. 이모지 활용: 😊 ✨ 💡 📋 🏘️ 💬 🌱 등을 자연스럽게 섞어요.
-5. 마무리 인사: 답변 마지막엔 항상 따뜻한 맺음말을 붙여요.
-
-[답변 원칙]
-- 아래 소스 문서 내용만 참고해서 답변해요. 출처를 자연스럽게 인용해요.
-- 소스에 없는 내용은 "제가 가진 자료에서는 확인이 어렵네요 😅" 라고 해요.
-- 비교 질문엔 표를 활용해요.
-- 절대로 사용자 대화 내용을 어딘가에 저장하거나 전달하지 않아요.
-
-=== 소스 문서 ===
-{context}"""
-    # 새 SDK 히스토리 포맷으로 변환
-    genai_history = []
-    for m in history[:-1]:
+def _build_history(history, max_turns=8):
+    """최근 max_turns개 대화만 히스토리로 전송 (토큰 절약)"""
+    recent = history[-(max_turns * 2):-1] if len(history) > 1 else []
+    result = []
+    for m in recent:
         role = "user" if m["role"] == "user" else "model"
-        genai_history.append(
-            types.Content(role=role, parts=[types.Part(text=m["content"])])
-        )
+        result.append(types.Content(role=role, parts=[types.Part(text=m["content"])]))
+    return result
+
+def ask_stream(query, context, history):
+    """스트리밍 제너레이터 — 글자가 바로바로 출력됨"""
+    full_prompt = f"{TOKKI_SYSTEM}\n\n=== 소스 문서 ===\n{context}\n\n질문: {query}"
     try:
-        chat = client.chats.create(model=MODEL_NAME, history=genai_history)
-        return chat.send_message(f"{sys_prompt}\n\n질문: {query}").text
+        chat = client.chats.create(model=MODEL_NAME, history=_build_history(history))
+        for chunk in chat.send_message_stream(full_prompt):
+            if chunk.text:
+                yield chunk.text
     except Exception as e:
         err = str(e)
-        if "429" in err or "quota" in err.lower() or "RESOURCE_EXHAUSTED" in err:
-            return "⚠️ 현재 많은 분들이 동시에 이용 중입니다. 잠시 후 다시 시도해주세요."
-        return f"⚠️ 오류: {err[:150]}"
+        if "429" in err or "RESOURCE_EXHAUSTED" in err:
+            yield "⚠️ 현재 많은 분들이 동시에 이용 중입니다. 잠시 후 다시 시도해주세요."
+        else:
+            yield f"⚠️ 오류: {err[:150]}"
+
+def ask(query, context, history):
+    """비스트리밍 버전 (정책 노트 작성 등 내부 용도)"""
+    return "".join(ask_stream(query, context, history))
 
 def get_policies():
     if not POLICIES_DIR.exists(): return []
@@ -986,6 +986,36 @@ with tab_chat:
         if total_active == 0:
             st.warning("⚠️ 오른쪽에서 참고 소스를 하나 이상 선택해주세요.")
 
+        def run_stream(q):
+            """공통 스트리밍 실행 — 글자가 즉시 화면에 나타남"""
+            all_docs = {f: pdfs[f] for f in active_pdfs}
+            for s in active_up + active_web:
+                all_docs[s["title"]] = s["text"]
+            ctx = get_chunks(q, all_docs)
+            st.session_state.messages.append({"role": "user", "content": q, "time": now_str()})
+
+            # 스트리밍 출력 영역
+            st.markdown(f"""
+<div style="display:flex;align-items:flex-start;gap:8px;margin-top:8px">
+  <div style="width:40px;height:40px;border-radius:12px;background:#FFD600;
+              display:flex;align-items:center;justify-content:center;
+              font-size:1.2rem;flex-shrink:0;">🤖</div>
+  <div style="background:#fff;border-radius:4px 16px 16px 16px;
+              padding:12px 15px;border:1px solid #eee;
+              font-size:.95rem;color:#1a1a1a;max-width:90%">
+    <b style="font-size:.73rem;color:#555;display:block;margin-bottom:4px">톡톡이</b>
+""", unsafe_allow_html=True)
+            stream_box = st.empty()
+            full_text = ""
+            for chunk in ask_stream(q, ctx, st.session_state.messages):
+                full_text += chunk
+                stream_box.markdown(full_text + "▌")
+            stream_box.markdown(full_text)
+            st.markdown("</div></div>", unsafe_allow_html=True)
+
+            st.session_state.messages.append({"role": "assistant", "content": full_text, "time": now_str()})
+            st.rerun()
+
         # 빠른 질문
         if not st.session_state.messages:
             st.markdown("**빠른 질문:**")
@@ -1001,28 +1031,14 @@ with tab_chat:
                     if total_active == 0:
                         st.warning("소스를 먼저 선택해주세요.")
                     else:
-                        st.session_state.messages.append({"role": "user", "content": q, "time": now_str()})
-                        with st.spinner("답변 생성 중..."):
-                            all_docs = {f: pdfs[f] for f in active_pdfs}
-                            for s in active_up + active_web: all_docs[s["title"]] = s["text"]
-                            ctx = get_chunks(q, all_docs)
-                            ans = ask(q, ctx, st.session_state.messages)
-                        st.session_state.messages.append({"role": "assistant", "content": ans, "time": now_str()})
-                        st.rerun()
+                        run_stream(q)
 
         # 입력창
         if prompt := st.chat_input("메시지를 입력하세요...", key="chat_input"):
             if total_active == 0:
                 st.warning("소스를 먼저 선택해주세요.")
             else:
-                st.session_state.messages.append({"role": "user", "content": prompt, "time": now_str()})
-                with st.spinner("답변 생성 중..."):
-                    all_docs = {f: pdfs[f] for f in active_pdfs}
-                    for s in active_up + active_web: all_docs[s["title"]] = s["text"]
-                    ctx = get_chunks(prompt, all_docs)
-                    ans = ask(prompt, ctx, st.session_state.messages)
-                st.session_state.messages.append({"role": "assistant", "content": ans, "time": now_str()})
-                st.rerun()
+                run_stream(prompt)
 
         # 하단 버튼
         if st.session_state.messages:
