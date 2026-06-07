@@ -1,5 +1,6 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import os, json, io, re
 import pdfplumber, requests
 from bs4 import BeautifulSoup
@@ -302,8 +303,8 @@ if not GOOGLE_API_KEY:
     st.error("Google API 키가 설정되지 않았습니다. Streamlit Secrets를 확인해주세요.")
     st.stop()
 
-genai.configure(api_key=GOOGLE_API_KEY)
-model = genai.GenerativeModel("gemini-2.0-flash")
+client = genai.Client(api_key=GOOGLE_API_KEY)
+MODEL_NAME = "gemini-2.5-flash-lite"
 
 
 # ════════════════════════════════════════════════════════════════
@@ -314,10 +315,11 @@ def now_str():
 
 def call_gemini(prompt: str) -> str:
     try:
-        return model.generate_content(prompt).text
+        resp = client.models.generate_content(model=MODEL_NAME, contents=prompt)
+        return resp.text
     except Exception as e:
         err = str(e)
-        if "429" in err or "quota" in err.lower() or "Resource" in err:
+        if "429" in err or "quota" in err.lower() or "RESOURCE_EXHAUSTED" in err:
             return "⚠️ 현재 많은 분들이 동시에 이용 중입니다. 잠시 후 다시 시도해주세요. (API 요청 한도 초과)"
         if "500" in err or "503" in err:
             return "⚠️ AI 서버가 일시적으로 응답하지 않습니다. 잠시 후 다시 시도해주세요."
@@ -448,13 +450,19 @@ def ask(query, context, history):
 
 === 소스 문서 ===
 {context}"""
-    hist = [{"role": "user" if m["role"]=="user" else "model",
-              "parts": [m["content"]]} for m in history[:-1]]
+    # 새 SDK 히스토리 포맷으로 변환
+    genai_history = []
+    for m in history[:-1]:
+        role = "user" if m["role"] == "user" else "model"
+        genai_history.append(
+            types.Content(role=role, parts=[types.Part(text=m["content"])])
+        )
     try:
-        return model.start_chat(history=hist).send_message(f"{sys_prompt}\n\n질문: {query}").text
+        chat = client.chats.create(model=MODEL_NAME, history=genai_history)
+        return chat.send_message(f"{sys_prompt}\n\n질문: {query}").text
     except Exception as e:
         err = str(e)
-        if "429" in err or "quota" in err.lower():
+        if "429" in err or "quota" in err.lower() or "RESOURCE_EXHAUSTED" in err:
             return "⚠️ 현재 많은 분들이 동시에 이용 중입니다. 잠시 후 다시 시도해주세요."
         return f"⚠️ 오류: {err[:150]}"
 
