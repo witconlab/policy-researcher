@@ -283,6 +283,7 @@ if st.session_state.get("_cur") != selected_policy:
     st.session_state.qz_idx      = 0; st.session_state.qz_score = 0
     st.session_state.qz_answered = False; st.session_state.qz_done = False
     st.session_state.report_text = ""
+    st.session_state.policy_note = ""
 
 pdfs = load_pdfs(selected_policy)
 
@@ -441,8 +442,17 @@ with tab_chat:
             c1, c2 = st.columns(2)
             for i, q in enumerate(examples):
                 if (c1 if i%2==0 else c2).button(q, key=f"ex{i}", use_container_width=True):
-                    st.session_state.messages.append({"role":"user","content":q,"time":now_str()})
-                    st.rerun()
+                    if total_active == 0:
+                        st.warning("소스를 먼저 선택해주세요.")
+                    else:
+                        st.session_state.messages.append({"role":"user","content":q,"time":now_str()})
+                        with st.spinner("답변 생성 중..."):
+                            all_docs = {f: pdfs[f] for f in active_pdfs}
+                            for s in active_web: all_docs[s["title"]] = s["text"]
+                            ctx = get_chunks(q, all_docs)
+                            ans = ask(q, ctx, st.session_state.messages)
+                        st.session_state.messages.append({"role":"assistant","content":ans,"time":now_str()})
+                        st.rerun()
 
         # 입력창
         if prompt := st.chat_input("메시지를 입력하세요..."):
@@ -458,9 +468,52 @@ with tab_chat:
                 st.session_state.messages.append({"role":"assistant","content":ans,"time":now_str()})
                 st.rerun()
 
+        # ── 하단 버튼 행: 대화 초기화 + 정책 노트 ──────────
         if st.session_state.messages:
-            if st.button("🗑️ 대화 초기화", key="clr"):
-                st.session_state.messages = []; st.rerun()
+            btn1, btn2 = st.columns(2)
+            if btn1.button("🗑️ 대화 초기화", key="clr", use_container_width=True):
+                st.session_state.messages = []
+                st.session_state.policy_note = ""
+                st.rerun()
+            if btn2.button("📋 정책 노트 작성", key="make_note", use_container_width=True, type="primary"):
+                if len(st.session_state.messages) < 2:
+                    st.warning("대화를 조금 더 나눈 뒤 작성해주세요.")
+                else:
+                    hist_text = "\n".join(
+                        f"{'[질문]' if m['role']=='user' else '[답변]'} {m['content']}"
+                        for m in st.session_state.messages
+                    )
+                    with st.spinner("정책 노트 작성 중..."):
+                        note = call_gemini(f"""아래는 정책 공론장에서 나눈 대화입니다.
+이 대화를 바탕으로 주민 누구나 이해할 수 있는 쉬운 용어로 정책 제안 노트를 작성해주세요.
+
+반드시 아래 항목을 모두 포함하고, 마크다운 형식으로 작성하세요:
+## 주제
+## 목적 (제안 취지)
+## 관련 제도
+## 정책 목표
+## 실행 과제
+### 문제점
+### 해결 방안
+## 소요 예산 (추정)
+## 기대 효과
+
+--- 대화 내용 ---
+{hist_text[:20000]}
+""")
+                    st.session_state.policy_note = note
+                    st.rerun()
+
+        # 정책 노트 표시
+        if st.session_state.get("policy_note"):
+            st.divider()
+            st.markdown("### 📋 정책 노트")
+            st.markdown(st.session_state.policy_note)
+            dl1, dl2 = st.columns(2)
+            dl1.download_button("📥 노트 저장 (.md)", data=st.session_state.policy_note,
+                file_name=f"{selected_policy}_정책노트.md", mime="text/markdown", use_container_width=True)
+            if dl2.button("✕ 닫기", key="close_note", use_container_width=True):
+                st.session_state.policy_note = ""; st.rerun()
 
 
 # ──────────────────────────────────────────────────────────────
