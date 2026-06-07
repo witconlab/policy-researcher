@@ -986,3 +986,41 @@ if tab_sources is not None:
                         st.rerun()
         else:
             st.info("추가된 웹/유튜브/업로드 소스가 없습니다. 위에서 추가하세요.")
+
+
+# ════════════════════════════════════════════════════════════════
+# 푸터
+# ════════════════════════════════════════════════════════════════
+st.markdown("""
+<div style="
+  margin-top: 48px;
+  padding: 18px 24px;
+  border-top: 1px solid #D0D0D0;
+  background: #F8F9FA;
+  border-radius: 0 0 12px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: .82rem;
+  color: #666;
+  line-height: 1.7;
+">
+  <div>
+    © 2026 위서영 &nbsp;/&nbsp;
+    <a href="https://creativecommons.org/licenses/by/4.0/deed.ko"
+       target="_blank" style="color:#2E7D32;text-decoration:none;">
+      CC BY 4.0 (저작권표시)
+    </a>
+    &nbsp;·&nbsp; 위서영(위트콘텐츠연구소) &nbsp;·&nbsp;
+    010-9887-9366 &nbsp;/&nbsp;
+    <a href="mailto:witconlab@naver.com"
+       style="color:#2E7D32;text-decoration:none;">witconlab@naver.com</a>
+  </div>
+  <div style="text-align:right;color:#888;">
+    ← → : 이전·다음 카드 &nbsp;·&nbsp;
+    💾 데이터는 메모리에만 유지 (새로고침 시 초기화)
+  </div>
+</div>
+""", unsafe_allow_html=True)
