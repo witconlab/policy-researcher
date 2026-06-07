@@ -1019,7 +1019,6 @@ st.markdown("""
        style="color:#2E7D32;text-decoration:none;">witconlab@naver.com</a>
   </div>
   <div style="text-align:right;color:#888;">
-    ← → : 이전·다음 카드 &nbsp;·&nbsp;
     💾 데이터는 메모리에만 유지 (새로고침 시 초기화)
   </div>
 </div>
