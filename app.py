@@ -8,8 +8,8 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 
 st.set_page_config(
-    page_title="정책 리서처",
-    page_icon="📚",
+    page_title="전남광주 통합특별시 시민주권 정책 공론장",
+    page_icon="🏛️",
     layout="wide",
 )
 
@@ -278,7 +278,7 @@ if st.session_state.current_policy != selected_policy:
     st.session_state.current_policy = selected_policy
 
 # ── 헤더 ──────────────────────────────────────────────────────
-st.title("📚 정책 리서처")
+st.title("🏛️ 전남광주 통합특별시 시민주권 정책 공론장")
 st.caption(f"현재 정책: **{selected_policy.replace('-', ' ')}** · 문서 {len(docs)}개 분석 중")
 
 # ── 탭 ───────────────────────────────────────────────────────
