@@ -121,58 +121,98 @@ st.markdown("""
 }
 
 /* ═══════════════════════════════════════
-   채팅창 (카카오톡 스타일)
+   채팅창 — 카카오톡 완성형 스타일
 ═══════════════════════════════════════ */
+.kakao-header {
+    background: #1A1A1A;
+    border-radius: 16px 16px 0 0;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.kakao-header .k-avatar {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: #FFD600;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; flex-shrink: 0;
+}
+.kakao-header .k-name { font-weight: 700; color: #FFFFFF; font-size: .95rem; }
+.kakao-header .k-sub  { font-size: .75rem; color: #AAA; margin-top: 1px; }
 .chat-wrap {
-    background: #F5F5F5;
-    border-radius: 14px;
-    border: 1px solid #EEEEEE;
-    padding: 20px 16px;
-    min-height: 440px;
+    background: #9DB3C8;
+    border-radius: 0 0 0 0;
+    padding: 18px 14px;
+    min-height: 460px;
     max-height: 560px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
+}
+.chat-date-divider {
+    text-align: center;
+    font-size: .72rem;
+    color: rgba(255,255,255,.75);
+    margin: 4px 0;
+}
+.chat-date-divider span {
+    background: rgba(0,0,0,.15);
+    border-radius: 20px;
+    padding: 3px 12px;
 }
 .bubble-user {
-    display: flex; justify-content: flex-end; align-items: flex-end; gap: 6px;
+    display: flex; justify-content: flex-end; align-items: flex-end; gap: 5px;
+}
+.bubble-user .time-left {
+    font-size: .65rem; color: rgba(255,255,255,.85);
+    margin-bottom: 2px; white-space: nowrap; align-self: flex-end;
 }
 .bubble-user .bubble {
     background: #FFD600;
     color: #1A1A1A;
-    border-radius: 18px 18px 4px 18px;
-    padding: 12px 16px;
-    max-width: 68%;
-    font-size: .97rem;
+    border-radius: 16px 16px 2px 16px;
+    padding: 11px 15px;
+    max-width: 65%;
+    font-size: .95rem;
     line-height: 1.65;
-    box-shadow: 0 1px 4px rgba(0,0,0,.10);
+    box-shadow: 0 1px 3px rgba(0,0,0,.15);
     word-break: break-word;
+    font-weight: 500;
 }
-.bubble-user .time { font-size: .68rem; color: #999; margin-bottom: 4px; white-space: nowrap; }
 .bubble-ai {
-    display: flex; justify-content: flex-start; align-items: flex-start; gap: 9px;
+    display: flex; justify-content: flex-start; align-items: flex-start; gap: 8px;
 }
 .bubble-ai .avatar {
-    width: 38px; height: 38px; border-radius: 10px;
-    background: #1A1A1A;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: #FFD600;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.15rem; flex-shrink: 0; margin-top: 2px;
+    font-size: 1.2rem; flex-shrink: 0; margin-top: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
 }
-.bubble-ai .bubble-body { display: flex; flex-direction: column; gap: 2px; max-width: 74%; }
-.bubble-ai .sender { font-size: .73rem; font-weight: 700; color: #555; margin-left: 2px; }
+.bubble-ai .bubble-body { display: flex; flex-direction: column; gap: 3px; max-width: 72%; }
+.bubble-ai .sender { font-size: .75rem; font-weight: 700; color: #fff; margin-left: 3px; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
 .bubble-ai .bubble {
     background: #FFFFFF;
     color: #1A1A1A;
-    border-radius: 4px 18px 18px 18px;
-    padding: 13px 16px;
-    font-size: .97rem;
-    line-height: 1.7;
-    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    border-radius: 2px 16px 16px 16px;
+    padding: 12px 15px;
+    font-size: .95rem;
+    line-height: 1.72;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
     word-break: break-word;
-    border: 1px solid #EEEEEE;
 }
-.bubble-ai .time { font-size: .68rem; color: #aaa; margin-top: 2px; margin-left: 2px; }
+.bubble-ai .time-right {
+    font-size: .65rem; color: rgba(255,255,255,.85);
+    margin-top: 1px; margin-left: 3px;
+    align-self: flex-end;
+}
+.chat-input-area {
+    background: #F6F6F6;
+    border-radius: 0 0 16px 16px;
+    border-top: 1px solid #DDD;
+    padding: 10px 14px 6px;
+}
 
 /* ═══════════════════════════════════════
    소스 관련
@@ -557,10 +597,10 @@ st.markdown("""
 # ════════════════════════════════════════════════════════════════
 # 메인 탭 — 3개
 # ════════════════════════════════════════════════════════════════
-tab_select, tab_studio, tab_chat = st.tabs([
+tab_select, tab_chat, tab_studio = st.tabs([
     "🗂️  공론장 테이블 선택",
-    "📝  사전 학습 정책 노트",
     "💬  정책 질의응답 챗봇",
+    "📝  사전 학습 정책 노트",
 ])
 
 
@@ -615,7 +655,7 @@ with tab_select:
 
     st.divider()
     st.markdown(f"**현재 선택된 테이블:** 📂 {policy_display(selected_policy)}")
-    st.caption("위에서 정책을 선택한 뒤 상단 탭 '사전 학습 정책 노트' 또는 '정책 질의응답 챗봇'으로 이동하세요.")
+    st.caption("위에서 정책을 선택한 뒤 상단 탭 '정책 질의응답 챗봇' 또는 '사전 학습 정책 노트'로 이동하세요.")
 
 
 # ════════════════════════════════════════════════════════════════
@@ -797,8 +837,8 @@ border-radius:8px;padding:13px 16px;margin-bottom:10px;border:1px solid #EEEEEE;
                         save_studio_cache(selected_policy, scache)
                     st.success(f"✅ {lbl} 저장 완료!"); st.rerun()
 
-    # ── 콘텐츠 서브탭 ──────────────────────────────────────────
-    s1, s2, s3, s4, s5 = st.tabs(["📋 요약 카드", "📊 인포그래픽", "🗺️ 마인드맵", "🃏 플래시카드", "🧠 퀴즈 & 보고서"])
+    # ── 콘텐츠 서브탭 (마인드맵 제외 — 관리자는 생성 패널에서 별도 관리) ──
+    s1, s2, s3, s4 = st.tabs(["📋 요약 카드", "📊 인포그래픽", "🃏 플래시카드", "🧠 퀴즈 & 보고서"])
 
     with s1:
         cards = scache.get("summary")
@@ -811,18 +851,11 @@ border-radius:8px;padding:13px 16px;margin-bottom:10px;border:1px solid #EEEEEE;
         else: not_ready_msg()
 
     with s3:
-        dot = scache.get("mindmap")
-        if dot:
-            try: st.graphviz_chart(dot, use_container_width=True)
-            except Exception as e: st.error(str(e)); st.code(dot)
-        else: not_ready_msg()
-
-    with s4:
         fc = scache.get("flashcards")
         if fc: show_fc(fc)
         else: not_ready_msg()
 
-    with s5:
+    with s4:
         ql, qr = st.columns(2)
         with ql:
             st.markdown("#### 🧠 퀴즈")
@@ -843,23 +876,6 @@ border-radius:8px;padding:13px 16px;margin-bottom:10px;border:1px solid #EEEEEE;
 # 탭 3 ─ 정책 질의응답 챗봇
 # ════════════════════════════════════════════════════════════════
 with tab_chat:
-    # 톡톡이 헤더 카드
-    st.markdown(f"""
-<div style="
-  background:#FFFDE7;border:1.5px solid #FFD600;border-radius:12px;
-  padding:13px 18px;margin-bottom:14px;
-  display:flex;align-items:center;gap:12px;
-">
-  <div style="font-size:2rem;background:#1A1A1A;border-radius:10px;
-              width:46px;height:46px;display:flex;align-items:center;
-              justify-content:center;flex-shrink:0;">🤖</div>
-  <div>
-    <div style="font-weight:800;color:#1A1A1A;font-size:1rem">자치 매니저 톡톡이</div>
-    <div style="font-size:.82rem;color:#888;margin-top:1px">📂 {policy_display(selected_policy)}</div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
     chat_col, src_col = st.columns([2.2, 1], gap="large")
 
     # ── 소스 패널 (오른쪽) ──────────────────────────────────
@@ -912,22 +928,38 @@ with tab_chat:
 
     # ── 채팅 영역 (왼쪽) ────────────────────────────────────
     with chat_col:
-        if total_active == 0:
-            st.warning("⚠️ 오른쪽에서 참고 소스를 하나 이상 선택해주세요.")
+        # 카카오톡 헤더
+        today = datetime.datetime.now().strftime("%Y년 %m월 %d일")
+        src_count = len(pdfs) + len(st.session_state.web_sources)
+        st.markdown(f"""
+<div class="kakao-header">
+  <div class="k-avatar">🤖</div>
+  <div>
+    <div class="k-name">자치 매니저 톡톡이</div>
+    <div class="k-sub">📂 {policy_display(selected_policy)} &nbsp;·&nbsp; 소스 {src_count}개</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
         # 채팅 버블
         bubbles_html = '<div class="chat-wrap">'
+        bubbles_html += f'<div class="chat-date-divider"><span>{today}</span></div>'
         if not st.session_state.messages:
-            bubbles_html += '<div style="text-align:center;margin:auto;color:#BBB;font-size:.9rem;padding:40px 0">💬 아래에서 질문을 선택하거나<br>직접 입력해보세요</div>'
+            bubbles_html += '<div style="text-align:center;margin:auto;color:rgba(255,255,255,.7);font-size:.88rem;padding:30px 0">💬 아래에서 질문을 선택하거나<br>직접 입력해보세요</div>'
         for msg in st.session_state.messages:
             t = msg.get("time", "")
             if msg["role"] == "user":
-                bubbles_html += f'<div class="bubble-user"><div class="time">{t}</div><div class="bubble">{msg["content"].replace(chr(10),"<br>")}</div></div>'
+                bubbles_html += f'<div class="bubble-user"><div class="time-left">{t}</div><div class="bubble">{msg["content"].replace(chr(10),"<br>")}</div></div>'
             else:
                 content = msg["content"].replace(chr(10), "<br>")
-                bubbles_html += f'<div class="bubble-ai"><div class="avatar">🤖</div><div class="bubble-body"><div class="sender">자치 매니저 톡톡이</div><div class="bubble">{content}</div><div class="time">{t}</div></div></div>'
+                bubbles_html += f'<div class="bubble-ai"><div class="avatar">🤖</div><div class="bubble-body"><div class="sender">톡톡이</div><div class="bubble">{content}</div><div class="time-right">{t}</div></div></div>'
         bubbles_html += '</div>'
+        # 입력창 영역 하단 라운딩용
+        bubbles_html += '<div class="chat-input-area"></div>'
         st.markdown(bubbles_html, unsafe_allow_html=True)
+
+        if total_active == 0:
+            st.warning("⚠️ 오른쪽에서 참고 소스를 하나 이상 선택해주세요.")
 
         # 빠른 질문
         if not st.session_state.messages:
