@@ -464,14 +464,36 @@ with tab_chat:
 
 
 # ──────────────────────────────────────────────────────────────
+# ── 스튜디오 캐시 저장/로드 ──────────────────────────────────
+def studio_cache_path(policy): return POLICIES_DIR / policy / "studio_cache.json"
+
+def load_studio_cache(policy):
+    p = studio_cache_path(policy)
+    if p.exists():
+        try: return json.loads(p.read_text(encoding="utf-8"))
+        except: pass
+    return {}
+
+def save_studio_cache(policy, cache):
+    studio_cache_path(policy).write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def not_ready_msg():
+    st.markdown("""
+<div style="text-align:center;padding:60px 20px;color:#888">
+  <div style="font-size:2.5rem;margin-bottom:12px">🔧</div>
+  <div style="font-size:1.1rem;font-weight:600;color:#555;margin-bottom:8px">관리자가 준비 중입니다</div>
+  <div style="font-size:.9rem">관리자가 이 항목을 아직 생성하지 않았습니다.<br>잠시 후 다시 확인해주세요.</div>
+</div>""", unsafe_allow_html=True)
+
+# ──────────────────────────────────────────────────────────────
 # 탭2: 스튜디오
 # ──────────────────────────────────────────────────────────────
 with tab_studio:
-    st.markdown("### 🎓 스튜디오")
     combined = "\n\n".join(f"[{fn}]\n{tx[:3000]}" for fn, tx in pdfs.items())
+    scache = load_studio_cache(selected_policy)
 
-    @st.cache_data(show_spinner=False)
-    def gen_summary(pol, c):
+    # ── 생성 함수 (관리자 전용) ───────────────────────────────
+    def do_gen_summary(pol, c):
         t = call_gemini(f"""'{pol}' 문서 지역/기관별 핵심 요약. JSON만:
 [{{"title":"지역(30자)","points":["핵심1","핵심2","핵심3"],"keyword":"키워드"}}]
 최대 8개.\n{c[:40000]}""").strip()
@@ -479,8 +501,14 @@ with tab_studio:
         try: return json.loads(t)
         except: return []
 
-    @st.cache_data(show_spinner=False)
-    def gen_info(pol, c):
+    def do_gen_info(pol, c):
+        t = call_gemini(f"""'{pol}' 문서 지역/기관별 핵심 요약. JSON만:
+[{{"title":"지역(30자)","points":["핵심1","핵심2","핵심3"],"keyword":"키워드"}}]
+최대 8개.\n{c[:40000]}""").strip()
+        if "```" in t: t=t.split("```")[1]; t=t[4:] if t.startswith("json") else t
+        try: return json.loads(t)
+        except: return []
+
         t = call_gemini(f"""정책 문서 인포그래픽 데이터. JSON만:
 {{"metrics":[{{"label":"","value":"","unit":""}}],
 "regions":[{{"name":"","approach":"","score":70}}],
@@ -490,147 +518,174 @@ with tab_studio:
         try: return json.loads(t)
         except: return {}
 
-    @st.cache_data(show_spinner=False)
-    def gen_mm(pol, c):
-        t = call_gemini(f"""정책 마인드맵. Graphviz DOT만:
-digraph {{graph[rankdir=LR] node[shape=rounded,style=filled,fontname="Helvetica"]
-"중심" [fillcolor="#2E7D32",fontcolor=white]
-"중심" -> "개념" ...}}\n{c[:30000]}""").strip()
+    def do_gen_mm(pol, c):
+        t = call_gemini(f"""'{pol}' 핵심 개념 마인드맵. Graphviz DOT 형식만 출력 (다른 텍스트 없이):
+digraph G {{
+  graph [rankdir=LR charset="UTF-8"]
+  node [shape=box style=filled fontname="Helvetica"]
+}}\n{c[:30000]}""").strip()
         if "```" in t: t=t.split("```")[1]; t=t[3:] if t.startswith("dot") else t
         return t
 
-    @st.cache_data(show_spinner=False)
-    def gen_fc(pol, c):
+    def do_gen_fc(pol, c):
         t = call_gemini(f"""'{pol}' 플래시카드 10개. JSON만:
 [{{"question":"질문","answer":"답변(2~3문장)"}}]\n{c[:30000]}""").strip()
         if "```" in t: t=t.split("```")[1]; t=t[4:] if t.startswith("json") else t
         try: return json.loads(t)
         except: return []
 
-    @st.cache_data(show_spinner=False)
-    def gen_qz(pol, c):
+    def do_gen_qz(pol, c):
         t = call_gemini(f"""'{pol}' 4지선다 8문제. JSON만:
 [{{"question":"","options":["①","②","③","④"],"answer":0,"explanation":""}}]\n{c[:30000]}""").strip()
         if "```" in t: t=t.split("```")[1]; t=t[4:] if t.startswith("json") else t
         try: return json.loads(t)
         except: return []
 
-    s1, s2, s3, s4, s5 = st.tabs(["📋 요약 카드","📊 인포그래픽","🗺️ 마인드맵","🃏 플래시카드","🧠 퀴즈 & 보고서"])
+    def do_gen_report(pol, pdfs_dict):
+        full = "\n\n".join(f"[{fn}]\n{tx[:5000]}" for fn, tx in pdfs_dict.items())
+        return call_gemini(f"""아래 문서로 종합 보고서. 마크다운:
+# {pol} 종합 분석 보고서
+## 1. 개요 ## 2. 지역별 현황 ## 3. 주요 쟁점 ## 4. 우수 사례 ## 5. 정책 제언
+각 섹션 구체적으로.\n{full[:50000]}""")
 
-    with s1:
-        if st.button("🔄 생성", key="gs"): gen_summary.clear(); st.rerun()
-        with st.spinner("..."): cards = gen_summary(selected_policy, combined)
-        if cards:
-            cols = st.columns(2)
-            for i,c in enumerate(cards):
-                with cols[i%2]:
-                    pts="".join(f"<li>{p}</li>" for p in c.get("points",[]))
-                    kw=c.get("keyword","")
-                    st.markdown(f"""<div style="background:#f8fdf8;border-left:4px solid #2E7D32;border-radius:8px;padding:14px 18px;margin-bottom:10px">
+    # ── 렌더 헬퍼 ────────────────────────────────────────────
+    def show_cards(cards):
+        cols = st.columns(2)
+        for i, c in enumerate(cards):
+            with cols[i % 2]:
+                pts = "".join(f"<li>{p}</li>" for p in c.get("points", []))
+                kw = c.get("keyword", "")
+                st.markdown(f"""<div style="background:#f8fdf8;border-left:4px solid #2E7D32;border-radius:8px;padding:14px 18px;margin-bottom:10px">
 <b style="color:#1B5E20">{'🏷️ '+kw+' · ' if kw else ''}{c.get('title','')}</b>
-<ul style="margin:8px 0 0;padding-left:18px;color:#333;font-size:.87rem;line-height:1.7">{pts}</ul></div>""",unsafe_allow_html=True)
-        else: st.info("생성 버튼을 눌러주세요.")
+<ul style="margin:8px 0 0;padding-left:18px;color:#333;font-size:.87rem;line-height:1.7">{pts}</ul></div>""", unsafe_allow_html=True)
 
-    with s2:
-        if st.button("🔄 생성", key="gi"): gen_info.clear(); st.rerun()
-        with st.spinner("..."): info = gen_info(selected_policy, combined)
-        if info:
-            mets=info.get("metrics",[])
-            if mets:
-                st.markdown("#### 📌 주요 수치")
-                mc=st.columns(min(len(mets),3))
-                for i,m in enumerate(mets[:6]):
-                    with mc[i%3]:
-                        st.markdown(f'<div class="metric-box"><div class="num">{m.get("value","–")}<span style="font-size:.9rem;color:#555"> {m.get("unit","")}</span></div><div class="lbl">{m.get("label","")}</div></div>',unsafe_allow_html=True)
-            regs=info.get("regions",[])
-            if regs:
-                st.markdown("#### 🗺️ 지역별 제도화 수준")
-                for r in regs:
-                    sc=int(r.get("score",50))
-                    st.markdown(f"""<div style="background:#fff;border:1px solid #C8E6C9;border-radius:8px;padding:12px 16px;margin-bottom:6px">
+    def show_info(info):
+        mets = info.get("metrics", [])
+        if mets:
+            st.markdown("#### 📌 주요 수치")
+            mc = st.columns(min(len(mets), 3))
+            for i, m in enumerate(mets[:6]):
+                with mc[i % 3]:
+                    st.markdown(f'<div class="metric-box"><div class="num">{m.get("value","–")}<span style="font-size:.9rem;color:#555"> {m.get("unit","")}</span></div><div class="lbl">{m.get("label","")}</div></div>', unsafe_allow_html=True)
+        regs = info.get("regions", [])
+        if regs:
+            st.markdown("#### 🗺️ 지역별 제도화 수준")
+            for r in regs:
+                sc = int(r.get("score", 50))
+                st.markdown(f"""<div style="background:#fff;border:1px solid #C8E6C9;border-radius:8px;padding:12px 16px;margin-bottom:6px">
 <b style="color:#1B5E20">📍 {r.get('name','')}</b>
 <div style="font-size:.82rem;color:#555;margin:4px 0 6px">{r.get('approach','')}</div>
 <div style="background:#E8F5E9;border-radius:4px;height:10px"><div style="background:#2E7D32;border-radius:4px;height:10px;width:{sc}%"></div></div>
-<div style="text-align:right;font-size:.75rem;color:#2E7D32;margin-top:2px">{sc}점</div></div>""",unsafe_allow_html=True)
-            tl=info.get("timeline",[])
-            if tl:
-                st.markdown("#### 📅 주요 연혁")
-                for item in tl:
-                    a,b=st.columns([1,5]); a.markdown(f"**{item.get('year','')}**"); b.markdown(item.get("event",""))
-            issues=info.get("key_issues",[])
-            if issues:
-                st.markdown("#### ⚡ 핵심 과제")
-                ic=st.columns(2)
-                for i,iss in enumerate(issues): ic[i%2].markdown(f"- {iss}")
-        else: st.info("생성 버튼을 눌러주세요.")
+<div style="text-align:right;font-size:.75rem;color:#2E7D32;margin-top:2px">{sc}점</div></div>""", unsafe_allow_html=True)
+        tl = info.get("timeline", [])
+        if tl:
+            st.markdown("#### 📅 주요 연혁")
+            for item in tl:
+                a, b = st.columns([1, 5]); a.markdown(f"**{item.get('year','')}**"); b.markdown(item.get("event", ""))
+        issues = info.get("key_issues", [])
+        if issues:
+            st.markdown("#### ⚡ 핵심 과제")
+            ic = st.columns(2)
+            for i, iss in enumerate(issues): ic[i % 2].markdown(f"- {iss}")
+
+    def show_fc(fc):
+        n = len(fc); idx = st.session_state.fc_idx % n; card = fc[idx]
+        st.markdown(f"**{idx+1} / {n}**")
+        if not st.session_state.fc_show:
+            st.markdown(f'<div class="flashcard">❓ {card["question"]}</div>', unsafe_allow_html=True)
+            if st.button("답 보기 👁️", use_container_width=True): st.session_state.fc_show = True; st.rerun()
+        else:
+            st.markdown(f'<div class="flashcard">💡 {card["answer"]}</div>', unsafe_allow_html=True)
+            c1, c2 = st.columns(2)
+            if c1.button("⬅️", use_container_width=True): st.session_state.fc_idx = (idx-1)%n; st.session_state.fc_show = False; st.rerun()
+            if c2.button("➡️", use_container_width=True): st.session_state.fc_idx = (idx+1)%n; st.session_state.fc_show = False; st.rerun()
+
+    def show_qz(qz):
+        if st.session_state.qz_done:
+            pct = int(st.session_state.qz_score / len(qz) * 100)
+            st.markdown(f"## 🎉 {st.session_state.qz_score}/{len(qz)} ({pct}점)")
+            if pct >= 80: st.success("우수!")
+            elif pct >= 50: st.warning("복습이 필요합니다.")
+            else: st.error("요약 카드부터 다시 시작하세요.")
+            if st.button("다시 도전"):
+                st.session_state.qz_idx = 0; st.session_state.qz_score = 0
+                st.session_state.qz_answered = False; st.session_state.qz_done = False; st.rerun()
+            return
+        qi = st.session_state.qz_idx
+        if qi >= len(qz): st.session_state.qz_done = True; st.rerun(); return
+        q = qz[qi]
+        st.markdown(f"**{qi+1}/{len(qz)}** | 점수: {st.session_state.qz_score}")
+        st.markdown(f"**{q['question']}**")
+        for oi, opt in enumerate(q["options"]):
+            if st.button(opt, key=f"o{qi}{oi}", use_container_width=True, disabled=st.session_state.qz_answered):
+                st.session_state.qz_answered = True
+                if oi == q["answer"]: st.session_state.qz_score += 1; st.success("✅ 정답!")
+                else: st.error(f"❌ 정답: {q['options'][q['answer']]}")
+                st.info(f"📖 {q.get('explanation','')}")
+        if st.session_state.qz_answered:
+            if st.button("다음 ➡️", use_container_width=True, key=f"qn{qi}"):
+                st.session_state.qz_idx += 1; st.session_state.qz_answered = False
+                if st.session_state.qz_idx >= len(qz): st.session_state.qz_done = True
+                st.rerun()
+
+    # ── 관리자 생성 패널 ──────────────────────────────────────
+    if st.session_state.is_admin:
+        with st.expander("🔧 관리자: 스튜디오 콘텐츠 생성", expanded=False):
+            st.caption("생성된 내용은 JSON에 저장되며 모든 이용자가 열람할 수 있습니다.")
+            ready = {k: k in scache and bool(scache[k]) for k in ["summary","info","mindmap","flashcards","quiz","report"]}
+            labels = {"summary":"📋 요약 카드","info":"📊 인포그래픽","mindmap":"🗺️ 마인드맵",
+                      "flashcards":"🃏 플래시카드","quiz":"🧠 퀴즈","report":"📄 보고서"}
+            gc = st.columns(6)
+            for i, (k, lbl) in enumerate(labels.items()):
+                badge = "✅" if ready[k] else "⬜"
+                if gc[i].button(f"{badge} {lbl}", key=f"adm_{k}", use_container_width=True):
+                    with st.spinner(f"{lbl} 생성 중..."):
+                        if k == "summary":   scache["summary"]    = do_gen_summary(selected_policy, combined)
+                        elif k == "info":    scache["info"]       = do_gen_info(selected_policy, combined)
+                        elif k == "mindmap": scache["mindmap"]    = do_gen_mm(selected_policy, combined)
+                        elif k == "flashcards": scache["flashcards"] = do_gen_fc(selected_policy, combined)
+                        elif k == "quiz":    scache["quiz"]       = do_gen_qz(selected_policy, combined)
+                        elif k == "report":  scache["report"]     = do_gen_report(selected_policy, pdfs)
+                        save_studio_cache(selected_policy, scache)
+                    st.success(f"{lbl} 저장 완료!"); st.rerun()
+
+    # ── 이용자 뷰: 5개 탭 ────────────────────────────────────
+    s1, s2, s3, s4, s5 = st.tabs(["📋 요약 카드", "📊 인포그래픽", "🗺️ 마인드맵", "🃏 플래시카드", "🧠 퀴즈 & 보고서"])
+
+    with s1:
+        cards = scache.get("summary")
+        if cards: show_cards(cards)
+        else: not_ready_msg()
+
+    with s2:
+        info = scache.get("info")
+        if info: show_info(info)
+        else: not_ready_msg()
 
     with s3:
-        if st.button("🔄 생성", key="gm"): gen_mm.clear(); st.rerun()
-        with st.spinner("..."): dot = gen_mm(selected_policy, combined)
+        dot = scache.get("mindmap")
         if dot:
             try: st.graphviz_chart(dot, use_container_width=True)
             except Exception as e: st.error(str(e)); st.code(dot)
-        else: st.info("생성 버튼을 눌러주세요.")
+        else: not_ready_msg()
 
     with s4:
-        if st.button("🔄 생성", key="gf"): gen_fc.clear(); st.session_state.fc_idx=0; st.session_state.fc_show=False; st.rerun()
-        with st.spinner("..."): fc = gen_fc(selected_policy, combined)
-        if fc:
-            n=len(fc); idx=st.session_state.fc_idx%n; card=fc[idx]
-            st.markdown(f"**{idx+1} / {n}**")
-            if not st.session_state.fc_show:
-                st.markdown(f'<div class="flashcard">❓ {card["question"]}</div>',unsafe_allow_html=True)
-                if st.button("답 보기 👁️",use_container_width=True): st.session_state.fc_show=True; st.rerun()
-            else:
-                st.markdown(f'<div class="flashcard">💡 {card["answer"]}</div>',unsafe_allow_html=True)
-                c1,c2=st.columns(2)
-                if c1.button("⬅️",use_container_width=True): st.session_state.fc_idx=(idx-1)%n; st.session_state.fc_show=False; st.rerun()
-                if c2.button("➡️",use_container_width=True): st.session_state.fc_idx=(idx+1)%n; st.session_state.fc_show=False; st.rerun()
-        else: st.info("생성 버튼을 눌러주세요.")
+        fc = scache.get("flashcards")
+        if fc: show_fc(fc)
+        else: not_ready_msg()
 
     with s5:
         ql, qr = st.columns(2)
         with ql:
             st.markdown("#### 🧠 퀴즈")
-            if st.button("🔄 생성", key="gq"): gen_qz.clear(); st.session_state.qz_idx=0; st.session_state.qz_score=0; st.session_state.qz_answered=False; st.session_state.qz_done=False; st.rerun()
-            with st.spinner("..."): qz = gen_qz(selected_policy, combined)
-            if qz and not st.session_state.qz_done:
-                qi=st.session_state.qz_idx
-                if qi<len(qz):
-                    q=qz[qi]
-                    st.markdown(f"**{qi+1}/{len(qz)}** | 점수: {st.session_state.qz_score}")
-                    st.markdown(f"**{q['question']}**")
-                    for oi,opt in enumerate(q["options"]):
-                        if st.button(opt,key=f"o{qi}{oi}",use_container_width=True,disabled=st.session_state.qz_answered):
-                            st.session_state.qz_answered=True
-                            if oi==q["answer"]: st.session_state.qz_score+=1; st.success("✅ 정답!")
-                            else: st.error(f"❌ 정답: {q['options'][q['answer']]}")
-                            st.info(f"📖 {q.get('explanation','')}")
-                    if st.session_state.qz_answered:
-                        if st.button("다음 ➡️",use_container_width=True,key=f"qn{qi}"):
-                            st.session_state.qz_idx+=1; st.session_state.qz_answered=False
-                            if st.session_state.qz_idx>=len(qz): st.session_state.qz_done=True
-                            st.rerun()
-                else: st.session_state.qz_done=True; st.rerun()
-            elif st.session_state.qz_done and qz:
-                pct=int(st.session_state.qz_score/len(qz)*100)
-                st.markdown(f"## 🎉 {st.session_state.qz_score}/{len(qz)} ({pct}점)")
-                if pct>=80: st.success("우수!")
-                elif pct>=50: st.warning("복습이 필요합니다.")
-                else: st.error("요약 카드부터 다시 시작하세요.")
-                if st.button("다시 도전"): st.session_state.qz_idx=0; st.session_state.qz_score=0; st.session_state.qz_answered=False; st.session_state.qz_done=False; st.rerun()
-            else: st.info("생성 버튼을 눌러주세요.")
-
+            qz = scache.get("quiz")
+            if qz: show_qz(qz)
+            else: not_ready_msg()
         with qr:
-            st.markdown("#### 📄 보고서 & PPT")
-            if st.button("📝 보고서 생성", type="primary", use_container_width=True):
-                with st.spinner("보고서 작성 중... (약 1분)"):
-                    full="\n\n".join(f"[{fn}]\n{tx[:5000]}" for fn,tx in pdfs.items())
-                    st.session_state.report_text = call_gemini(f"""아래 문서로 종합 보고서. 마크다운:
-# {selected_policy} 종합 분석 보고서
-## 1. 개요 ## 2. 지역별 현황 ## 3. 주요 쟁점 ## 4. 우수 사례 ## 5. 정책 제언
-각 섹션 구체적으로.\n{full[:50000]}""")
-            if st.session_state.report_text:
-                st.markdown(st.session_state.report_text[:2000]+"…")
-                st.download_button("📥 보고서 (.md)", data=st.session_state.report_text,
+            st.markdown("#### 📄 보고서")
+            report = scache.get("report")
+            if report:
+                st.markdown(report[:2000] + ("…" if len(report) > 2000 else ""))
+                st.download_button("📥 보고서 (.md)", data=report,
                     file_name=f"{selected_policy}_보고서.md", mime="text/markdown", use_container_width=True)
+            else: not_ready_msg()
