@@ -17,8 +17,8 @@ except Exception:
 # 페이지 설정
 # ════════════════════════════════════════════════════════════════
 st.set_page_config(
-    page_title="전남광주 통합특별시 시민주권 정책 공론장",
-    page_icon="🏛️",
+    page_title="자치 매니저 톡톡이 | 전남광주 통합특별시",
+    page_icon="🤖",
     layout="wide",
 )
 
@@ -261,12 +261,28 @@ def get_chunks(query, src_dict, max_chars=60000):
     return "\n---\n".join(parts)
 
 def ask(query, context, history):
-    sys_prompt = f"""당신은 정책 전문 리서처입니다.
-아래 소스 문서만 참고하여 한국어로 정확하게 답변하세요.
-- 답변 시 반드시 출처를 인용하세요.
-- 소스에 없는 내용은 "소스에서 확인되지 않습니다"라고 답하세요.
-- 비교가 필요한 경우 표를 사용하세요.
-- 주민이 이해하기 쉬운 쉬운 말로 설명하세요.
+    sys_prompt = f"""당신은 '톡톡이'입니다. 전남광주 통합특별시 시민을 위한 자치 정책 매니저예요.
+
+[정체성]
+- 이름: 톡톡이 🤖
+- 역할: 전남광주 통합특별시 시민 곁에서 정책을 쉽고 친근하게 안내해 드리는 자치 정책 매니저
+- 성격: 따뜻하고 다정하며, 어려운 말 없이 쉽게 설명하는 친구 같은 매니저
+
+[답변 톤앤매너 규칙 — 반드시 지켜줘]
+1. 경청과 공감: 답변 첫 문장은 반드시 공감 리액션으로 시작해요.
+   예) "아, 그 부분이 궁금하셨군요! 😊", "좋은 질문이에요! ✨", "네, 맞아요! 그 부분 제가 설명해 드릴게요 💡"
+2. 쉬운 언어: 어려운 행정 용어·한자어·영어는 반드시 풀어 설명해요.
+   예) '수혜 대상' → '지원받으실 수 있는 주민분들', '시행' → '실제로 시작하는 것'
+3. 해요체 사용: "~입니다/합니다" 대신 "~에요/이에요", "~해요", "~해보세요!" 같은 친근한 해요체로 말해요.
+4. 이모지 활용: 😊 ✨ 💡 📋 🏘️ 💬 🌱 등을 문장 중간중간 자연스럽게 섞어 가독성을 높여요.
+5. 마무리 인사: 답변 마지막엔 항상 따뜻한 맺음말을 붙여요.
+   예) "더 궁금한 점이 있으시면 언제든 편하게 말씀해 주세요! 😊"
+
+[답변 원칙]
+- 아래 소스 문서 내용만 참고해서 답변해요. 출처를 자연스럽게 인용해요.
+- 소스에 없는 내용은 "제가 가진 자료에서는 확인이 어렵네요 😅 다른 질문이 있으시면 말씀해 주세요!" 라고 해요.
+- 비교 질문엔 표를 활용해요.
+- 절대로 사용자 대화 내용을 어딘가에 저장하거나 전달하지 않아요.
 
 === 소스 문서 ===
 {context}"""
@@ -312,8 +328,8 @@ if not policies:
     st.stop()
 
 with st.sidebar:
-    st.markdown("## 🏛️ 정책 공론장")
-    st.caption("전남광주 통합특별시 시민주권")
+    st.markdown("## 🤖 자치 매니저 **톡톡이**")
+    st.caption("전남광주 통합특별시 시민주권 정책 공론장")
     st.divider()
 
     selected_policy = st.radio(
@@ -373,7 +389,42 @@ for s in st.session_state.web_sources:
 # ════════════════════════════════════════════════════════════════
 # 메인 헤더
 # ════════════════════════════════════════════════════════════════
-st.markdown(f"## 🏛️ {selected_policy.replace('-', ' ')}")
+
+# ── 타이틀 ──────────────────────────────────────────────────
+st.markdown("""
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:6px">
+  <div style="font-size:3rem;line-height:1">🤖</div>
+  <div>
+    <div style="font-size:1.75rem;font-weight:800;color:#1B5E20;line-height:1.2">자치 매니저, 톡톡이</div>
+    <div style="font-size:.92rem;color:#555;margin-top:3px">전남광주 통합특별시 시민주권 정책 공론장</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── 공지사항 배너 ────────────────────────────────────────────
+st.markdown("""
+<div style="
+  background: linear-gradient(135deg, #E8F5E9, #F1F8E9);
+  border: 1.5px solid #66BB6A;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+">
+  <div style="font-size:1.6rem;flex-shrink:0">📢</div>
+  <div>
+    <div style="font-weight:700;color:#1B5E20;font-size:1rem;margin-bottom:2px">오늘 행사 전용 정책 챗봇입니다.</div>
+    <div style="color:#2E7D32;font-size:.9rem;line-height:1.6">
+      질문하신 내용은 <b>어디에도 저장되지 않으니</b> 안심하고 질문하세요 😊<br>
+      대화 내용은 오직 내 화면에서만 보이며, 새로고침하면 사라져요.
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown(f"##### 📂 {selected_policy.replace('-', ' ')}")
 
 # 탭 구성 (관리자에게는 소스 관리 탭 추가)
 if st.session_state.is_admin:
@@ -450,7 +501,7 @@ with tab_chat:
                 bubbles_html += f'<div class="bubble-user"><div class="time">{t}</div><div class="bubble">{msg["content"].replace(chr(10),"<br>")}</div></div>'
             else:
                 content = msg["content"].replace(chr(10), "<br>")
-                bubbles_html += f'<div class="bubble-ai"><div class="avatar">🏛️</div><div class="bubble-body"><div class="sender">정책 리서처</div><div class="bubble">{content}</div><div class="time">{t}</div></div></div>'
+                bubbles_html += f'<div class="bubble-ai"><div class="avatar">🤖</div><div class="bubble-body"><div class="sender">자치 매니저 톡톡이</div><div class="bubble">{content}</div><div class="time">{t}</div></div></div>'
         bubbles_html += '</div>'
         st.markdown(bubbles_html, unsafe_allow_html=True)
 
