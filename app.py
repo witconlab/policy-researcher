@@ -289,6 +289,39 @@ st.markdown("""
 [data-testid="stButton"] button[kind="primary"]:hover {
     background: #FFC107 !important;
 }
+
+/* ═══════════════════════════════════════
+   빠른 질문 박스 — 버튼을 카드처럼 숨김 처리
+═══════════════════════════════════════ */
+[data-testid="stButton"] button.example-hidden {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0; left: 0;
+    cursor: pointer;
+}
+/* 질문 예시 버튼 — 카드 스타일 직접 적용 */
+div[data-testid="stHorizontalBlock"] [data-testid="stButton"] button[kind="secondary"] {
+    background: #FFFFFF !important;
+    border: 1.5px solid #EEEEEE !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    text-align: left !important;
+    font-size: .85rem !important;
+    font-weight: 600 !important;
+    color: #1A1A1A !important;
+    min-height: 72px !important;
+    white-space: pre-wrap !important;
+    line-height: 1.5 !important;
+    transition: all .15s !important;
+}
+div[data-testid="stHorizontalBlock"] [data-testid="stButton"] button[kind="secondary"]:hover {
+    background: #FFFDE7 !important;
+    border-color: #FFD600 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(255,214,0,.25) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1016,22 +1049,26 @@ with tab_chat:
             st.session_state.messages.append({"role": "assistant", "content": full_text, "time": now_str()})
             st.rerun()
 
-        # 빠른 질문
+        # 빠른 질문 — 박스 카드형
         if not st.session_state.messages:
-            st.markdown("**빠른 질문:**")
             examples = [
-                "마을활동가 인정 방식을 지역별로 비교해주세요",
-                "활동가 역량 기준은 어떻게 정의되나요?",
-                "기회소득과 인정체계 연계 방안은?",
-                "우수 사례와 정책 제언을 알려주세요",
+                ("💬", "마을활동가 인정 방식을\n지역별로 비교해주세요"),
+                ("📋", "활동가 역량 기준은\n어떻게 정의되나요?"),
+                ("🔗", "기회소득과 인정체계\n연계 방안은?"),
+                ("🌟", "우수 사례와 정책 제언을\n알려주세요"),
             ]
-            c1, c2 = st.columns(2)
-            for i, q in enumerate(examples):
-                if (c1 if i % 2 == 0 else c2).button(q, key=f"ex{i}", use_container_width=True):
-                    if total_active == 0:
-                        st.warning("소스를 먼저 선택해주세요.")
-                    else:
-                        run_stream(q)
+            st.markdown('<p style="font-size:.82rem;font-weight:700;color:#888;margin:14px 0 6px">💡 질문 예시를 눌러보세요</p>', unsafe_allow_html=True)
+            c1, c2 = st.columns(2, gap="small")
+            for i, (icon, label) in enumerate(examples):
+                col = c1 if i % 2 == 0 else c2
+                q_clean = label.replace("\n", " ")
+                btn_label = f"{icon}\n{label}"
+                with col:
+                    if st.button(btn_label, key=f"ex{i}", use_container_width=True):
+                        if total_active == 0:
+                            st.warning("소스를 먼저 선택해주세요.")
+                        else:
+                            run_stream(q_clean)
 
         # 입력창
         if prompt := st.chat_input("메시지를 입력하세요...", key="chat_input"):
