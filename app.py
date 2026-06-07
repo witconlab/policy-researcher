@@ -29,148 +29,224 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-/* ── 전체 배경 ── */
-.stApp { background: #F0F2F5; }
-[data-testid="stSidebar"] { background: #1B5E20 !important; min-width: 220px !important; }
-[data-testid="stSidebar"] * { color: #E8F5E9 !important; }
-[data-testid="stSidebar"] .stButton button { background:#2E7D32 !important; border:1px solid #4CAF50 !important; color:#fff !important; }
-[data-testid="stSidebar"] input { color:#1a1a1a !important; }
-[data-testid="stSidebar"] .admin-badge { background:#FFF !important; color:#1B5E20 !important; }
-
-/* ── 패널 공통 ── */
-.panel {
-    background: #FFFFFF;
-    border-radius: 16px;
-    padding: 0;
-    height: 100%;
-    box-shadow: 0 2px 8px rgba(0,0,0,.08);
-    overflow: hidden;
+/* ═══════════════════════════════════════
+   기본 배경 & 사이드바
+═══════════════════════════════════════ */
+.stApp { background: #FFFFFF; }
+[data-testid="stSidebar"] {
+    background: #FAFAFA !important;
+    border-right: 1px solid #EEEEEE;
+    min-width: 220px !important;
 }
-.panel-header {
-    background: linear-gradient(135deg, #1B5E20, #2E7D32);
-    color: #fff;
-    padding: 14px 18px;
-    font-size: 1rem;
-    font-weight: 700;
-    border-radius: 16px 16px 0 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.panel-body { padding: 14px 16px; }
 
-/* ── 정책 카드 ── */
-.policy-card-btn {
-    width: 100%;
-    text-align: left;
-    background: #F8FDF8;
-    border: 1.5px solid #C8E6C9;
-    border-radius: 10px;
-    padding: 10px 12px;
-    margin-bottom: 8px;
+/* ═══════════════════════════════════════
+   상단 탭 커스터마이징 (노란 강조)
+═══════════════════════════════════════ */
+[data-testid="stTabs"] > div:first-child {
+    border-bottom: 2px solid #EEEEEE;
+    gap: 0;
+}
+[data-testid="stTabs"] button {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    color: #888 !important;
+    padding: 12px 28px !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    border-bottom: 3px solid transparent !important;
+    margin-bottom: -2px;
+    transition: color .2s;
+}
+[data-testid="stTabs"] button:hover {
+    color: #1A1A1A !important;
+    background: #FFFDE7 !important;
+}
+[data-testid="stTabs"] button[aria-selected="true"] {
+    color: #1A1A1A !important;
+    border-bottom: 3px solid #FFD600 !important;
+    background: #FFFDE7 !important;
+}
+
+/* ═══════════════════════════════════════
+   정책 카드
+═══════════════════════════════════════ */
+.pol-card {
+    background: #FAFAFA;
+    border: 1.5px solid #EEEEEE;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
     cursor: pointer;
-    transition: all .2s;
-    font-size: .85rem;
+    transition: all .18s;
+}
+.pol-card:hover {
+    background: #FFFDE7;
+    border-color: #FFD600;
+}
+.pol-card-sel {
+    background: #FFF9C4 !important;
+    border: 2px solid #FFD600 !important;
+}
+.pol-num {
+    display: inline-block;
+    background: #FFD600;
+    color: #1A1A1A;
+    font-size: .72rem;
+    font-weight: 800;
+    border-radius: 5px;
+    padding: 1px 7px;
+    margin-right: 6px;
+}
+.pol-title {
+    font-size: .92rem;
+    font-weight: 600;
     color: #1A1A1A;
     line-height: 1.4;
 }
-.policy-card-btn:hover { background:#E8F5E9; border-color:#66BB6A; }
-.policy-card-selected {
-    background: #E8F5E9 !important;
-    border: 2px solid #2E7D32 !important;
+.pol-icon { font-size: 1.1rem; margin-right: 4px; }
+
+/* ═══════════════════════════════════════
+   섹션 헤더 (노란 왼쪽 보더)
+═══════════════════════════════════════ */
+.sec-header {
+    border-left: 4px solid #FFD600;
+    padding: 8px 14px;
+    margin: 16px 0 10px;
+    background: #FFFDE7;
+    border-radius: 0 8px 8px 0;
+    font-size: 1.05rem;
     font-weight: 700;
-    color: #1B5E20 !important;
-}
-.policy-num {
-    font-size:.7rem; font-weight:700; color:#2E7D32;
-    background:#E8F5E9; border-radius:4px; padding:1px 5px;
-    margin-right:5px;
+    color: #1A1A1A;
 }
 
-/* ── 카카오톡 채팅창 ── */
+/* ═══════════════════════════════════════
+   채팅창 (카카오톡 스타일)
+═══════════════════════════════════════ */
 .chat-wrap {
-    background: #B2C7D9;
-    border-radius: 12px;
-    padding: 16px 14px;
-    min-height: 420px;
-    max-height: 520px;
+    background: #F5F5F5;
+    border-radius: 14px;
+    border: 1px solid #EEEEEE;
+    padding: 20px 16px;
+    min-height: 440px;
+    max-height: 560px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
 }
 .bubble-user {
     display: flex; justify-content: flex-end; align-items: flex-end; gap: 6px;
 }
 .bubble-user .bubble {
-    background: #FEE500; color: #1A1A1A;
+    background: #FFD600;
+    color: #1A1A1A;
     border-radius: 18px 18px 4px 18px;
-    padding: 10px 14px; max-width: 72%;
-    font-size: .95rem; line-height: 1.6;
-    box-shadow: 0 1px 3px rgba(0,0,0,.12); word-break: break-word;
+    padding: 12px 16px;
+    max-width: 68%;
+    font-size: .97rem;
+    line-height: 1.65;
+    box-shadow: 0 1px 4px rgba(0,0,0,.10);
+    word-break: break-word;
 }
-.bubble-user .time { font-size:.68rem; color:#555; margin-bottom:4px; white-space:nowrap; }
+.bubble-user .time { font-size: .68rem; color: #999; margin-bottom: 4px; white-space: nowrap; }
 .bubble-ai {
-    display: flex; justify-content: flex-start; align-items: flex-start; gap: 8px;
+    display: flex; justify-content: flex-start; align-items: flex-start; gap: 9px;
 }
 .bubble-ai .avatar {
-    width:36px; height:36px; border-radius:10px; background:#2E7D32;
-    display:flex; align-items:center; justify-content:center;
-    font-size:1.1rem; flex-shrink:0; margin-top:2px;
+    width: 38px; height: 38px; border-radius: 10px;
+    background: #1A1A1A;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem; flex-shrink: 0; margin-top: 2px;
 }
-.bubble-ai .bubble-body { display:flex; flex-direction:column; gap:2px; max-width:78%; }
-.bubble-ai .sender { font-size:.73rem; font-weight:600; color:#333; margin-left:2px; }
+.bubble-ai .bubble-body { display: flex; flex-direction: column; gap: 2px; max-width: 74%; }
+.bubble-ai .sender { font-size: .73rem; font-weight: 700; color: #555; margin-left: 2px; }
 .bubble-ai .bubble {
-    background: #FFFFFF; color: #1A1A1A;
+    background: #FFFFFF;
+    color: #1A1A1A;
     border-radius: 4px 18px 18px 18px;
-    padding: 11px 14px; font-size: .95rem; line-height: 1.7;
-    box-shadow: 0 1px 3px rgba(0,0,0,.10); word-break: break-word;
+    padding: 13px 16px;
+    font-size: .97rem;
+    line-height: 1.7;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    word-break: break-word;
+    border: 1px solid #EEEEEE;
 }
-.bubble-ai .time { font-size:.68rem; color:#666; margin-top:2px; margin-left:2px; }
+.bubble-ai .time { font-size: .68rem; color: #aaa; margin-top: 2px; margin-left: 2px; }
 
-/* ── 소스 카드 ── */
-.src-header { font-size:.75rem; font-weight:700; color:#888; letter-spacing:.04em; margin:8px 0 3px; }
+/* ═══════════════════════════════════════
+   소스 관련
+═══════════════════════════════════════ */
+.src-header {
+    font-size: .73rem; font-weight: 700; color: #AAA;
+    letter-spacing: .04em; margin: 10px 0 4px;
+    text-transform: uppercase;
+}
 .src-card {
-    background:#fff; border:1px solid #E0E0E0; border-radius:10px;
-    padding:10px 12px; margin-bottom:7px; display:flex;
-    align-items:flex-start; gap:9px;
+    background: #FAFAFA; border: 1px solid #EEEEEE; border-radius: 10px;
+    padding: 10px 13px; margin-bottom: 7px; display: flex;
+    align-items: flex-start; gap: 9px;
 }
-.src-card-icon { font-size:1.3rem; flex-shrink:0; margin-top:1px; }
-.src-card-body { flex:1; min-width:0; }
-.src-card-title { font-weight:600; color:#1A1A1A; font-size:.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.src-card-meta { font-size:.72rem; color:#888; margin-top:2px; }
-.src-card-badge { font-size:.65rem; font-weight:700; border-radius:4px; padding:2px 6px; display:inline-block; margin-top:3px; }
-.badge-pdf    { background:#E3F2FD; color:#1565C0; }
-.badge-upload { background:#E8F5E9; color:#2E7D32; }
-.badge-web    { background:#FFF3E0; color:#E65100; }
-.badge-yt     { background:#FCE4EC; color:#C62828; }
+.src-card-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 1px; }
+.src-card-body { flex: 1; min-width: 0; }
+.src-card-title { font-weight: 600; color: #1A1A1A; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.src-card-meta  { font-size: .72rem; color: #AAA; margin-top: 2px; }
+.src-card-badge { font-size: .64rem; font-weight: 700; border-radius: 4px; padding: 2px 6px; display: inline-block; margin-top: 3px; }
+.badge-pdf    { background: #E3F2FD; color: #1565C0; }
+.badge-upload { background: #FFFDE7; color: #F57F17; }
+.badge-web    { background: #FFF3E0; color: #E65100; }
+.badge-yt     { background: #FCE4EC; color: #C62828; }
 
-/* ── 관리자 배지 ── */
+/* ═══════════════════════════════════════
+   관리자
+═══════════════════════════════════════ */
 .admin-badge {
-    background:#1B5E20; color:#fff; border-radius:6px;
-    padding:3px 10px; font-size:.78rem; font-weight:700;
-    display:inline-block; margin-bottom:10px;
+    background: #1A1A1A; color: #FFD600; border-radius: 6px;
+    padding: 3px 10px; font-size: .78rem; font-weight: 700;
+    display: inline-block; margin-bottom: 8px;
 }
 
-/* ── 스튜디오 ── */
-.metric-box { background:#E8F5E9;border-radius:10px;padding:14px;text-align:center;margin-bottom:7px; }
-.metric-box .num { font-size:1.6rem;font-weight:700;color:#2E7D32; }
-.metric-box .lbl { font-size:.77rem;color:#555;margin-top:2px; }
+/* ═══════════════════════════════════════
+   스튜디오
+═══════════════════════════════════════ */
+.metric-box {
+    background: #FFFDE7; border: 1.5px solid #FFD600;
+    border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 8px;
+}
+.metric-box .num { font-size: 1.7rem; font-weight: 700; color: #1A1A1A; }
+.metric-box .lbl { font-size: .77rem; color: #666; margin-top: 3px; }
 .flashcard {
-    background:linear-gradient(135deg,#E8F5E9,#F1F8E9);
-    border:2px solid #2E7D32; border-radius:16px;
-    padding:32px 20px; text-align:center; min-height:150px;
-    font-size:1rem; color:#1B5E20; line-height:1.7; margin-bottom:10px;
+    background: #FFFDE7;
+    border: 2px solid #FFD600;
+    border-radius: 16px;
+    padding: 34px 22px; text-align: center; min-height: 160px;
+    font-size: 1rem; color: #1A1A1A; line-height: 1.7; margin-bottom: 12px;
 }
-.not-ready { text-align:center; padding:40px 20px; color:#888; }
+.not-ready { text-align: center; padding: 50px 20px; color: #BBB; }
 
-/* ── 노트 영역 ── */
+/* ═══════════════════════════════════════
+   정책 노트
+═══════════════════════════════════════ */
 .note-area {
-    background:#FFFDE7;
-    border:1.5px solid #F9A825;
-    border-radius:12px;
-    padding:20px 24px;
-    margin-top:12px;
+    background: #FFFDE7;
+    border: 2px solid #FFD600;
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin-top: 14px;
+}
+
+/* ═══════════════════════════════════════
+   버튼 전역 — primary 노란색
+═══════════════════════════════════════ */
+[data-testid="stButton"] button[kind="primary"],
+.stButton > button[data-testid*="primary"] {
+    background: #FFD600 !important;
+    color: #1A1A1A !important;
+    border: none !important;
+    font-weight: 700 !important;
+}
+[data-testid="stButton"] button[kind="primary"]:hover {
+    background: #FFC107 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -191,7 +267,7 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 
 
 # ════════════════════════════════════════════════════════════════
-# 유틸리티
+# 유틸리티 함수
 # ════════════════════════════════════════════════════════════════
 def now_str():
     return datetime.datetime.now().strftime("%I:%M %p")
@@ -249,11 +325,6 @@ def fetch_article(url):
     text  = "\n".join(l for l in soup.get_text(separator="\n", strip=True).splitlines() if l.strip())
     return title, text
 
-def detect_and_fetch(url):
-    if "youtube.com" in url or "youtu.be" in url:
-        return fetch_youtube(url)
-    return fetch_article(url)
-
 def search_web(keyword, max_results=6):
     try:
         with DDGS() as d:
@@ -261,7 +332,7 @@ def search_web(keyword, max_results=6):
                     for r in d.text(keyword, max_results=max_results)]
     except: return []
 
-def sources_path(policy):  return POLICIES_DIR / policy / "sources.json"
+def sources_path(policy):      return POLICIES_DIR / policy / "sources.json"
 def studio_cache_path(policy): return POLICIES_DIR / policy / "studio_cache.json"
 
 def load_saved_sources(policy):
@@ -323,17 +394,15 @@ def ask(query, context, history):
 
 [답변 톤앤매너 규칙 — 반드시 지켜줘]
 1. 경청과 공감: 답변 첫 문장은 반드시 공감 리액션으로 시작해요.
-   예) "아, 그 부분이 궁금하셨군요! 😊", "좋은 질문이에요! ✨", "네, 맞아요! 그 부분 제가 설명해 드릴게요 💡"
+   예) "아, 그 부분이 궁금하셨군요! 😊", "좋은 질문이에요! ✨"
 2. 쉬운 언어: 어려운 행정 용어·한자어·영어는 반드시 풀어 설명해요.
-   예) '수혜 대상' → '지원받으실 수 있는 주민분들', '시행' → '실제로 시작하는 것'
-3. 해요체 사용: "~입니다/합니다" 대신 "~에요/이에요", "~해요", "~해보세요!" 같은 친근한 해요체로 말해요.
-4. 이모지 활용: 😊 ✨ 💡 📋 🏘️ 💬 🌱 등을 문장 중간중간 자연스럽게 섞어 가독성을 높여요.
+3. 해요체 사용: "~에요/이에요", "~해요", "~해보세요!" 같은 친근한 해요체로 말해요.
+4. 이모지 활용: 😊 ✨ 💡 📋 🏘️ 💬 🌱 등을 자연스럽게 섞어요.
 5. 마무리 인사: 답변 마지막엔 항상 따뜻한 맺음말을 붙여요.
-   예) "더 궁금한 점이 있으시면 언제든 편하게 말씀해 주세요! 😊"
 
 [답변 원칙]
-- 아래 소스 문서 내용만 참고해서 답변해요. 출처를 자연스럽게 인용해요.
-- 소스에 없는 내용은 "제가 가진 자료에서는 확인이 어렵네요 😅 다른 질문이 있으시면 말씀해 주세요!" 라고 해요.
+- 소스 문서 내용만 참고해서 답변해요. 출처를 자연스럽게 인용해요.
+- 소스에 없는 내용은 "제가 가진 자료에서는 확인이 어렵네요 😅" 라고 해요.
 - 비교 질문엔 표를 활용해요.
 - 절대로 사용자 대화 내용을 어딘가에 저장하거나 전달하지 않아요.
 
@@ -361,38 +430,34 @@ def policy_display(name):
     return name.replace("-", " ")
 
 def policy_short(name):
-    """번호 제거 후 짧게 표시"""
     s = re.sub(r'^\d+\.', '', name).replace("-", " ").strip()
-    return s[:22] + "…" if len(s) > 22 else s
+    return s
 
 def policy_num(name):
     m = re.match(r'^(\d+)', name)
     return m.group(1) if m else "?"
 
-POLICY_ICONS = [
-    "🏛️","🗳️","📜","🤝","🏘️","💰",
-    "📊","🌱","🏥","📚","🛣️","🌿"
-]
+POLICY_ICONS = ["🏛️","🗳️","📜","🤝","🏘️","💰","📊","🌱","🏥","📚","🛣️","🌿"]
 
 def src_icon(stype):
     return {"pdf":"📄","pdf_upload":"📤","youtube":"▶️","article":"📰"}.get(stype,"🔗")
 
 def src_badge(stype):
-    labels = {"pdf":"PDF","pdf_upload":"업로드 PDF","youtube":"유튜브","article":"웹/뉴스"}
+    labels  = {"pdf":"PDF","pdf_upload":"업로드 PDF","youtube":"유튜브","article":"웹/뉴스"}
     classes = {"pdf":"badge-pdf","pdf_upload":"badge-upload","youtube":"badge-yt","article":"badge-web"}
-    return f'<span class="src-card-badge {classes.get(stype,"")}">  {labels.get(stype,stype)}  </span>'
+    return f'<span class="src-card-badge {classes.get(stype,"")}"> {labels.get(stype,stype)} </span>'
 
 def not_ready_msg():
     st.markdown("""
 <div class="not-ready">
-  <div style="font-size:2.2rem;margin-bottom:10px">🔧</div>
-  <div style="font-size:1rem;font-weight:600;color:#555;margin-bottom:6px">관리자가 준비 중입니다</div>
-  <div style="font-size:.85rem">잠시 후 다시 확인해주세요.</div>
+  <div style="font-size:2.5rem;margin-bottom:12px">🔧</div>
+  <div style="font-weight:600;color:#999;font-size:1rem;margin-bottom:6px">관리자가 준비 중입니다</div>
+  <div style="font-size:.85rem;color:#BBB">관리자가 이 항목을 아직 생성하지 않았습니다.<br>잠시 후 다시 확인해주세요.</div>
 </div>""", unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════════════════════
-# 사이드바 — 관리자 로그인만
+# 사이드바 — 관리자 로그인
 # ════════════════════════════════════════════════════════════════
 policies = get_policies()
 if not policies:
@@ -401,7 +466,7 @@ if not policies:
 
 with st.sidebar:
     st.markdown("## 🤖 **톡톡이**")
-    st.caption("전남광주 통합특별시\n시민주권 정책 공론장")
+    st.caption("전남광주 통합특별시 시민주권 정책 공론장")
     st.divider()
 
     if "is_admin" not in st.session_state:
@@ -426,7 +491,7 @@ with st.sidebar:
 
 
 # ════════════════════════════════════════════════════════════════
-# 세션 초기화 — selected_policy 기반
+# 세션 초기화
 # ════════════════════════════════════════════════════════════════
 if "selected_policy" not in st.session_state:
     st.session_state.selected_policy = policies[0]
@@ -458,87 +523,107 @@ for s in st.session_state.web_sources:
 
 
 # ════════════════════════════════════════════════════════════════
-# 메인 헤더
+# 헤더
 # ════════════════════════════════════════════════════════════════
 st.markdown("""
-<div style="display:flex;align-items:center;gap:14px;margin-bottom:8px">
-  <div style="font-size:2.6rem;line-height:1">🤖</div>
+<div style="display:flex;align-items:center;gap:14px;padding:10px 0 6px">
+  <div style="font-size:2.4rem;line-height:1">🤖</div>
   <div>
-    <div style="font-size:1.6rem;font-weight:800;color:#1B5E20;line-height:1.2">자치 매니저, 톡톡이</div>
-    <div style="font-size:.88rem;color:#555;margin-top:2px">전남광주 통합특별시 시민주권 정책 공론장</div>
+    <div style="font-size:1.55rem;font-weight:800;color:#1A1A1A;line-height:1.2">자치 매니저, 톡톡이</div>
+    <div style="font-size:.86rem;color:#888;margin-top:2px">전남광주 통합특별시 시민주권 정책 공론장</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div style="
-  background: linear-gradient(135deg, #E8F5E9, #F1F8E9);
-  border: 1.5px solid #66BB6A;
-  border-radius: 12px;
-  padding: 12px 18px;
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  background:#FFFDE7;
+  border:1.5px solid #FFD600;
+  border-radius:10px;
+  padding:11px 18px;
+  margin-bottom:18px;
+  display:flex;align-items:center;gap:10px;
 ">
-  <div style="font-size:1.4rem;flex-shrink:0">📢</div>
-  <div>
-    <div style="font-weight:700;color:#1B5E20;font-size:.95rem;margin-bottom:1px">오늘 행사 전용 정책 챗봇입니다.</div>
-    <div style="color:#2E7D32;font-size:.85rem;line-height:1.6">
-      질문하신 내용은 <b>어디에도 저장되지 않으니</b> 안심하고 질문하세요 😊
-      &nbsp;·&nbsp; 대화 내용은 오직 내 화면에서만 보이며, 새로고침하면 사라져요.
-    </div>
-  </div>
+  <span style="font-size:1.3rem;flex-shrink:0">📢</span>
+  <span style="font-size:.88rem;color:#5D4037;line-height:1.6">
+    <b>오늘 행사 전용 정책 챗봇입니다.</b>
+    질문하신 내용은 <b>어디에도 저장되지 않으니</b> 안심하고 질문하세요 😊
+    &nbsp;·&nbsp; 대화 내용은 오직 내 화면에서만 보이며, 새로고침하면 사라져요.
+  </span>
 </div>
 """, unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════════════════════
-# 3단 레이아웃
+# 메인 탭 — 3개
 # ════════════════════════════════════════════════════════════════
-col_left, col_mid, col_right = st.columns([1.1, 1.6, 1.6], gap="medium")
+tab_select, tab_studio, tab_chat = st.tabs([
+    "🗂️  공론장 테이블 선택",
+    "📝  사전 학습 정책 노트",
+    "💬  정책 질의응답 챗봇",
+])
 
 
-# ────────────────────────────────────────────────────────────────
-# 왼쪽 패널: 공론장 테이블 선택
-# ────────────────────────────────────────────────────────────────
-with col_left:
-    st.markdown("""
-<div class="panel">
-  <div class="panel-header">🗂️ 공론장 테이블 선택</div>
+# ════════════════════════════════════════════════════════════════
+# 탭 1 ─ 공론장 테이블 선택
+# ════════════════════════════════════════════════════════════════
+with tab_select:
+    st.markdown('<div class="sec-header">🗂️ 공론장 테이블 — 정책 주제를 선택하세요</div>',
+                unsafe_allow_html=True)
+    st.caption("선택한 정책이 '사전 학습 정책 노트'와 '정책 질의응답 챗봇'에 연동됩니다.")
+    st.markdown("")
+
+    # 4열 그리드
+    COLS = 4
+    rows = [policies[i:i+COLS] for i in range(0, len(policies), COLS)]
+    for row in rows:
+        cols = st.columns(COLS)
+        for ci, pol in enumerate(row):
+            idx = policies.index(pol)
+            num  = policy_num(pol)
+            short = policy_short(pol)
+            icon = POLICY_ICONS[idx] if idx < len(POLICY_ICONS) else "📌"
+            is_sel = (pol == selected_policy)
+            with cols[ci]:
+                # 선택 강조 박스
+                border_color = "#FFD600" if is_sel else "#EEEEEE"
+                bg_color     = "#FFF9C4" if is_sel else "#FAFAFA"
+                badge_bg     = "#FFD600" if is_sel else "#EEEEEE"
+                badge_color  = "#1A1A1A"
+                st.markdown(f"""
+<div style="
+  background:{bg_color};
+  border:2px solid {border_color};
+  border-radius:12px;
+  padding:16px 14px 14px;
+  margin-bottom:10px;
+  min-height:90px;
+">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+    <span style="background:{badge_bg};color:{badge_color};font-size:.72rem;font-weight:800;
+                 border-radius:5px;padding:2px 7px;">{num}</span>
+    <span style="font-size:1.1rem">{icon}</span>
+  </div>
+  <div style="font-size:.88rem;font-weight:600;color:#1A1A1A;line-height:1.5">{short}</div>
 </div>""", unsafe_allow_html=True)
-
-    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-    st.caption("정책 주제를 선택하면 학습 노트와 챗봇이 연동됩니다.")
-
-    # 2열 그리드로 정책 카드 표시
-    card_cols = st.columns(2)
-    for i, pol in enumerate(policies):
-        num = policy_num(pol)
-        short = policy_short(pol)
-        icon = POLICY_ICONS[i] if i < len(POLICY_ICONS) else "📌"
-        is_sel = (pol == selected_policy)
-
-        with card_cols[i % 2]:
-            btn_style = "primary" if is_sel else "secondary"
-            label = f"{icon} {num}. {short}"
-            if st.button(label, key=f"pol_{i}", use_container_width=True, type=btn_style):
-                st.session_state.selected_policy = pol
-                st.rerun()
+                btn_label = "✅ 선택됨" if is_sel else "선택하기"
+                btn_type  = "primary" if is_sel else "secondary"
+                if st.button(btn_label, key=f"sel_pol_{idx}",
+                             use_container_width=True, type=btn_type):
+                    st.session_state.selected_policy = pol
+                    st.rerun()
 
     st.divider()
-    st.markdown(f"**현재 선택:** {policy_display(selected_policy)}")
+    st.markdown(f"**현재 선택된 테이블:** 📂 {policy_display(selected_policy)}")
+    st.caption("위에서 정책을 선택한 뒤 상단 탭 '사전 학습 정책 노트' 또는 '정책 질의응답 챗봇'으로 이동하세요.")
 
 
-# ────────────────────────────────────────────────────────────────
-# 중간 패널: 사전 학습 정책 노트 (스튜디오)
-# ────────────────────────────────────────────────────────────────
-with col_mid:
-    st.markdown("""
-<div class="panel">
-  <div class="panel-header">📝 사전 학습 정책 노트</div>
-</div>""", unsafe_allow_html=True)
-    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+# ════════════════════════════════════════════════════════════════
+# 탭 2 ─ 사전 학습 정책 노트 (스튜디오)
+# ════════════════════════════════════════════════════════════════
+with tab_studio:
+    st.markdown(f'<div class="sec-header">📝 {policy_display(selected_policy)} — 사전 학습 정책 노트</div>',
+                unsafe_allow_html=True)
 
     all_src_text = {f: pdfs[f] for f in pdfs}
     for s in st.session_state.web_sources:
@@ -546,7 +631,7 @@ with col_mid:
     combined = "\n\n".join(f"[{fn}]\n{tx[:3000]}" for fn, tx in all_src_text.items())
     scache = load_studio_cache(selected_policy)
 
-    # ── 생성 함수 ──────────────────────────────────────────────
+    # ── 생성 함수 ─────────────────────────────────────────────
     def do_gen_summary(pol, c):
         t = call_gemini(f"""'{pol}' 문서를 지역·기관별로 핵심 내용 요약. JSON 배열만 출력:
 [{{"title":"지역명 또는 기관명(30자 이내)","points":["핵심1","핵심2","핵심3"],"keyword":"대표키워드"}}]
@@ -609,9 +694,11 @@ answer는 정답 인덱스(0~3).
             with cols[i % 2]:
                 pts = "".join(f"<li>{p}</li>" for p in c.get("points", []))
                 kw  = c.get("keyword", "")
-                st.markdown(f"""<div style="background:#f8fdf8;border-left:4px solid #2E7D32;border-radius:8px;padding:12px 14px;margin-bottom:8px">
-<b style="color:#1B5E20">{'🏷️ '+kw+' · ' if kw else ''}{c.get('title','')}</b>
-<ul style="margin:6px 0 0;padding-left:16px;color:#333;font-size:.83rem;line-height:1.7">{pts}</ul></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div style="background:#FAFAFA;border-left:4px solid #FFD600;
+border-radius:8px;padding:13px 16px;margin-bottom:10px;border:1px solid #EEEEEE;border-left-width:4px;">
+<b style="color:#1A1A1A">{'🏷️ '+kw+' · ' if kw else ''}{c.get('title','')}</b>
+<ul style="margin:7px 0 0;padding-left:17px;color:#444;font-size:.85rem;line-height:1.7">{pts}</ul>
+</div>""", unsafe_allow_html=True)
 
     def show_info(info):
         mets = info.get("metrics", [])
@@ -620,17 +707,17 @@ answer는 정답 인덱스(0~3).
             mc = st.columns(min(len(mets), 3))
             for i, m in enumerate(mets[:6]):
                 with mc[i % 3]:
-                    st.markdown(f'<div class="metric-box"><div class="num">{m.get("value","–")}<span style="font-size:.85rem;color:#555"> {m.get("unit","")}</span></div><div class="lbl">{m.get("label","")}</div></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="metric-box"><div class="num">{m.get("value","–")}<span style="font-size:.85rem;color:#666"> {m.get("unit","")}</span></div><div class="lbl">{m.get("label","")}</div></div>', unsafe_allow_html=True)
         regs = info.get("regions", [])
         if regs:
             st.markdown("#### 🗺️ 지역별 제도화 수준")
             for r in regs:
                 sc = int(r.get("score", 50))
-                st.markdown(f"""<div style="background:#fff;border:1px solid #C8E6C9;border-radius:8px;padding:10px 14px;margin-bottom:5px">
-<b style="color:#1B5E20">📍 {r.get('name','')}</b>
-<div style="font-size:.79rem;color:#555;margin:3px 0 5px">{r.get('approach','')}</div>
-<div style="background:#E8F5E9;border-radius:4px;height:8px"><div style="background:#2E7D32;border-radius:4px;height:8px;width:{sc}%"></div></div>
-<div style="text-align:right;font-size:.72rem;color:#2E7D32;margin-top:2px">{sc}점</div></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div style="background:#FAFAFA;border:1px solid #EEEEEE;border-radius:8px;padding:11px 15px;margin-bottom:6px">
+<b style="color:#1A1A1A">📍 {r.get('name','')}</b>
+<div style="font-size:.8rem;color:#666;margin:3px 0 6px">{r.get('approach','')}</div>
+<div style="background:#EEEEEE;border-radius:4px;height:8px"><div style="background:#FFD600;border-radius:4px;height:8px;width:{sc}%"></div></div>
+<div style="text-align:right;font-size:.72rem;color:#888;margin-top:2px">{sc}점</div></div>""", unsafe_allow_html=True)
         tl = info.get("timeline", [])
         if tl:
             st.markdown("#### 📅 주요 연혁")
@@ -693,13 +780,13 @@ answer는 정답 인덱스(0~3).
     # ── 관리자 생성 패널 ───────────────────────────────────────
     if st.session_state.is_admin:
         with st.expander("🔧 관리자: 콘텐츠 생성", expanded=False):
-            st.caption("버튼을 클릭하면 AI가 콘텐츠를 생성하고 저장합니다.")
-            labels = {"summary": "📋 요약카드", "info": "📊 인포그래픽", "mindmap": "🗺️ 마인드맵",
-                      "flashcards": "🃏 플래시카드", "quiz": "🧠 퀴즈", "report": "📄 보고서"}
-            gc = st.columns(3)
+            st.caption("버튼을 클릭하면 AI가 콘텐츠를 생성하고 저장합니다. 모든 이용자가 열람 가능합니다.")
+            labels = {"summary":"📋 요약카드","info":"📊 인포그래픽","mindmap":"🗺️ 마인드맵",
+                      "flashcards":"🃏 플래시카드","quiz":"🧠 퀴즈","report":"📄 보고서"}
+            gc = st.columns(6)
             for i, (k, lbl) in enumerate(labels.items()):
                 badge = "✅" if scache.get(k) else "⬜"
-                if gc[i % 3].button(f"{badge} {lbl}", key=f"adm_{k}", use_container_width=True):
+                if gc[i].button(f"{badge} {lbl}", key=f"adm_{k}", use_container_width=True):
                     with st.spinner(f"{lbl} 생성 중..."):
                         if k == "summary":      scache["summary"]    = do_gen_summary(selected_policy, combined)
                         elif k == "info":       scache["info"]       = do_gen_info(selected_policy, combined)
@@ -710,8 +797,8 @@ answer는 정답 인덱스(0~3).
                         save_studio_cache(selected_policy, scache)
                     st.success(f"✅ {lbl} 저장 완료!"); st.rerun()
 
-    # ── 콘텐츠 탭 ─────────────────────────────────────────────
-    s1, s2, s3, s4, s5 = st.tabs(["📋 요약", "📊 인포그래픽", "🗺️ 마인드맵", "🃏 플래시카드", "🧠 퀴즈·보고서"])
+    # ── 콘텐츠 서브탭 ──────────────────────────────────────────
+    s1, s2, s3, s4, s5 = st.tabs(["📋 요약 카드", "📊 인포그래픽", "🗺️ 마인드맵", "🃏 플래시카드", "🧠 퀴즈 & 보고서"])
 
     with s1:
         cards = scache.get("summary")
@@ -752,37 +839,48 @@ answer는 정답 인덱스(0~3).
             else: not_ready_msg()
 
 
-# ────────────────────────────────────────────────────────────────
-# 오른쪽 패널: 정책 질의응답 챗봇
-# ────────────────────────────────────────────────────────────────
-with col_right:
-    st.markdown("""
-<div class="panel">
-  <div class="panel-header">💬 정책 질의응답 챗봇</div>
-</div>""", unsafe_allow_html=True)
-    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-
-    # 톡톡이 헤더
+# ════════════════════════════════════════════════════════════════
+# 탭 3 ─ 정책 질의응답 챗봇
+# ════════════════════════════════════════════════════════════════
+with tab_chat:
+    # 톡톡이 헤더 카드
     st.markdown(f"""
-<div style="display:flex;align-items:center;gap:10px;background:#E8F5E9;border-radius:10px;padding:10px 14px;margin-bottom:10px">
-  <div style="font-size:1.8rem">🤖</div>
+<div style="
+  background:#FFFDE7;border:1.5px solid #FFD600;border-radius:12px;
+  padding:13px 18px;margin-bottom:14px;
+  display:flex;align-items:center;gap:12px;
+">
+  <div style="font-size:2rem;background:#1A1A1A;border-radius:10px;
+              width:46px;height:46px;display:flex;align-items:center;
+              justify-content:center;flex-shrink:0;">🤖</div>
   <div>
-    <div style="font-weight:700;color:#1B5E20;font-size:.95rem">자치 매니저 톡톡이</div>
-    <div style="font-size:.78rem;color:#2E7D32">📂 {policy_display(selected_policy)}</div>
+    <div style="font-weight:800;color:#1A1A1A;font-size:1rem">자치 매니저 톡톡이</div>
+    <div style="font-size:.82rem;color:#888;margin-top:1px">📂 {policy_display(selected_policy)}</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-    # 소스 상태
-    upload_srcs = [s for s in st.session_state.web_sources if s.get("type") == "pdf_upload"]
-    web_srcs    = [s for s in st.session_state.web_sources if s.get("type") != "pdf_upload"]
-    active_pdfs  = [f for f in pdfs if st.session_state.get(f"ck_{f}", True)]
-    active_up    = [s for s in upload_srcs if st.session_state.get(f"ck_{s['id']}", True)]
-    active_web   = [s for s in web_srcs    if st.session_state.get(f"ck_{s['id']}", True)]
-    total_active = len(active_pdfs) + len(active_up) + len(active_web)
+    chat_col, src_col = st.columns([2.2, 1], gap="large")
 
-    # 소스 선택 (접기 가능)
-    with st.expander(f"📎 참고 소스 ({total_active}개 선택됨)", expanded=False):
+    # ── 소스 패널 (오른쪽) ──────────────────────────────────
+    with src_col:
+        upload_srcs = [s for s in st.session_state.web_sources if s.get("type") == "pdf_upload"]
+        web_srcs    = [s for s in st.session_state.web_sources if s.get("type") != "pdf_upload"]
+        active_pdfs  = [f for f in pdfs if st.session_state.get(f"ck_{f}", True)]
+        active_up    = [s for s in upload_srcs if st.session_state.get(f"ck_{s['id']}", True)]
+        active_web   = [s for s in web_srcs    if st.session_state.get(f"ck_{s['id']}", True)]
+        total_active = len(active_pdfs) + len(active_up) + len(active_web)
+
+        st.markdown(f"""
+<div style="background:#FAFAFA;border:1px solid #EEEEEE;border-radius:10px;
+            padding:12px 14px;margin-bottom:8px;">
+  <div style="font-weight:700;font-size:.9rem;color:#1A1A1A;margin-bottom:2px">
+    📎 참고 소스
+  </div>
+  <div style="font-size:.78rem;color:#AAA">{total_active}개 선택됨</div>
+</div>
+""", unsafe_allow_html=True)
+
         ca, cb = st.columns(2)
         if ca.button("전체 선택", use_container_width=True, key="sel"):
             for f in pdfs: st.session_state[f"ck_{f}"] = True
@@ -794,95 +892,97 @@ with col_right:
             st.rerun()
 
         if pdfs:
-            st.markdown('<div class="src-header">📄 PDF 문서 (폴더)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="src-header">📄 PDF 문서</div>', unsafe_allow_html=True)
             for fname in pdfs:
-                st.checkbox(fname[:28] + ("…" if len(fname) > 28 else ""),
+                st.checkbox(fname[:26] + ("…" if len(fname) > 26 else ""),
                             key=f"ck_{fname}", value=st.session_state.get(f"ck_{fname}", True))
         if upload_srcs:
             st.markdown('<div class="src-header">📤 업로드 PDF</div>', unsafe_allow_html=True)
             for src in upload_srcs:
-                st.checkbox(src["title"][:26] + ("…" if len(src["title"]) > 26 else ""),
+                st.checkbox(src["title"][:24] + ("…" if len(src["title"]) > 24 else ""),
                             key=f"ck_{src['id']}", value=st.session_state.get(f"ck_{src['id']}", True))
         if web_srcs:
             st.markdown('<div class="src-header">🌐 웹 & 유튜브</div>', unsafe_allow_html=True)
             for src in web_srcs:
                 icon = "▶️" if src.get("type") == "youtube" else "📰"
-                st.checkbox(f"{icon} {src['title'][:24]}{'…' if len(src['title'])>24 else ''}",
+                st.checkbox(f"{icon} {src['title'][:22]}{'…' if len(src['title'])>22 else ''}",
                             key=f"ck_{src['id']}", value=st.session_state.get(f"ck_{src['id']}", True))
         if not pdfs and not st.session_state.web_sources:
-            st.info("소스가 없습니다. 관리자가 추가합니다.")
+            st.info("소스가 없습니다.\n관리자가 추가합니다.")
 
-    if total_active == 0:
-        st.warning("⚠️ 참고 소스를 하나 이상 선택해주세요.")
-
-    # ── 채팅 버블 ────────────────────────────────────────────
-    bubbles_html = '<div class="chat-wrap">'
-    if not st.session_state.messages:
-        bubbles_html += '<div style="text-align:center;margin:auto;color:#fff;opacity:.75;font-size:.88rem;padding:30px 0">💬 아래에서 질문을 선택하거나<br>직접 입력해보세요</div>'
-    for msg in st.session_state.messages:
-        t = msg.get("time", "")
-        if msg["role"] == "user":
-            bubbles_html += f'<div class="bubble-user"><div class="time">{t}</div><div class="bubble">{msg["content"].replace(chr(10),"<br>")}</div></div>'
-        else:
-            content = msg["content"].replace(chr(10), "<br>")
-            bubbles_html += f'<div class="bubble-ai"><div class="avatar">🤖</div><div class="bubble-body"><div class="sender">자치 매니저 톡톡이</div><div class="bubble">{content}</div><div class="time">{t}</div></div></div>'
-    bubbles_html += '</div>'
-    st.markdown(bubbles_html, unsafe_allow_html=True)
-
-    # ── 빠른 질문 버튼 ───────────────────────────────────────
-    if not st.session_state.messages:
-        st.markdown("**빠른 질문:**")
-        examples = [
-            "마을활동가 인정 방식을 지역별로 비교해주세요",
-            "활동가 역량 기준은 어떻게 정의되나요?",
-            "기회소득과 인정체계 연계 방안은?",
-            "우수 사례와 정책 제언을 알려주세요",
-        ]
-        c1, c2 = st.columns(2)
-        for i, q in enumerate(examples):
-            if (c1 if i % 2 == 0 else c2).button(q, key=f"ex{i}", use_container_width=True):
-                if total_active == 0:
-                    st.warning("소스를 먼저 선택해주세요.")
-                else:
-                    st.session_state.messages.append({"role": "user", "content": q, "time": now_str()})
-                    with st.spinner("답변 생성 중..."):
-                        all_docs = {f: pdfs[f] for f in active_pdfs}
-                        for s in active_up + active_web: all_docs[s["title"]] = s["text"]
-                        ctx = get_chunks(q, all_docs)
-                        ans = ask(q, ctx, st.session_state.messages)
-                    st.session_state.messages.append({"role": "assistant", "content": ans, "time": now_str()})
-                    st.rerun()
-
-    # ── 입력창 ──────────────────────────────────────────────
-    if prompt := st.chat_input("메시지를 입력하세요...", key="chat_input"):
+    # ── 채팅 영역 (왼쪽) ────────────────────────────────────
+    with chat_col:
         if total_active == 0:
-            st.warning("소스를 먼저 선택해주세요.")
-        else:
-            st.session_state.messages.append({"role": "user", "content": prompt, "time": now_str()})
-            with st.spinner("답변 생성 중..."):
-                all_docs = {f: pdfs[f] for f in active_pdfs}
-                for s in active_up + active_web: all_docs[s["title"]] = s["text"]
-                ctx = get_chunks(prompt, all_docs)
-                ans = ask(prompt, ctx, st.session_state.messages)
-            st.session_state.messages.append({"role": "assistant", "content": ans, "time": now_str()})
-            st.rerun()
+            st.warning("⚠️ 오른쪽에서 참고 소스를 하나 이상 선택해주세요.")
 
-    # ── 하단 버튼 ────────────────────────────────────────────
-    if st.session_state.messages:
-        b1, b2 = st.columns(2)
-        if b1.button("🗑️ 대화 초기화", key="clr", use_container_width=True):
-            st.session_state.messages = []
-            st.session_state.policy_note = ""
-            st.rerun()
-        if b2.button("📋 정책 노트 작성", key="make_note", use_container_width=True, type="primary"):
-            if len(st.session_state.messages) < 2:
-                st.warning("대화를 조금 더 나눈 뒤 작성해주세요.")
+        # 채팅 버블
+        bubbles_html = '<div class="chat-wrap">'
+        if not st.session_state.messages:
+            bubbles_html += '<div style="text-align:center;margin:auto;color:#BBB;font-size:.9rem;padding:40px 0">💬 아래에서 질문을 선택하거나<br>직접 입력해보세요</div>'
+        for msg in st.session_state.messages:
+            t = msg.get("time", "")
+            if msg["role"] == "user":
+                bubbles_html += f'<div class="bubble-user"><div class="time">{t}</div><div class="bubble">{msg["content"].replace(chr(10),"<br>")}</div></div>'
             else:
-                hist_text = "\n".join(
-                    f"{'[질문]' if m['role']=='user' else '[답변]'} {m['content']}"
-                    for m in st.session_state.messages)
-                with st.spinner("정책 노트 작성 중..."):
-                    note = call_gemini(f"""아래는 정책 공론장에서 나눈 대화입니다.
+                content = msg["content"].replace(chr(10), "<br>")
+                bubbles_html += f'<div class="bubble-ai"><div class="avatar">🤖</div><div class="bubble-body"><div class="sender">자치 매니저 톡톡이</div><div class="bubble">{content}</div><div class="time">{t}</div></div></div>'
+        bubbles_html += '</div>'
+        st.markdown(bubbles_html, unsafe_allow_html=True)
+
+        # 빠른 질문
+        if not st.session_state.messages:
+            st.markdown("**빠른 질문:**")
+            examples = [
+                "마을활동가 인정 방식을 지역별로 비교해주세요",
+                "활동가 역량 기준은 어떻게 정의되나요?",
+                "기회소득과 인정체계 연계 방안은?",
+                "우수 사례와 정책 제언을 알려주세요",
+            ]
+            c1, c2 = st.columns(2)
+            for i, q in enumerate(examples):
+                if (c1 if i % 2 == 0 else c2).button(q, key=f"ex{i}", use_container_width=True):
+                    if total_active == 0:
+                        st.warning("소스를 먼저 선택해주세요.")
+                    else:
+                        st.session_state.messages.append({"role": "user", "content": q, "time": now_str()})
+                        with st.spinner("답변 생성 중..."):
+                            all_docs = {f: pdfs[f] for f in active_pdfs}
+                            for s in active_up + active_web: all_docs[s["title"]] = s["text"]
+                            ctx = get_chunks(q, all_docs)
+                            ans = ask(q, ctx, st.session_state.messages)
+                        st.session_state.messages.append({"role": "assistant", "content": ans, "time": now_str()})
+                        st.rerun()
+
+        # 입력창
+        if prompt := st.chat_input("메시지를 입력하세요...", key="chat_input"):
+            if total_active == 0:
+                st.warning("소스를 먼저 선택해주세요.")
+            else:
+                st.session_state.messages.append({"role": "user", "content": prompt, "time": now_str()})
+                with st.spinner("답변 생성 중..."):
+                    all_docs = {f: pdfs[f] for f in active_pdfs}
+                    for s in active_up + active_web: all_docs[s["title"]] = s["text"]
+                    ctx = get_chunks(prompt, all_docs)
+                    ans = ask(prompt, ctx, st.session_state.messages)
+                st.session_state.messages.append({"role": "assistant", "content": ans, "time": now_str()})
+                st.rerun()
+
+        # 하단 버튼
+        if st.session_state.messages:
+            b1, b2 = st.columns(2)
+            if b1.button("🗑️ 대화 초기화", key="clr", use_container_width=True):
+                st.session_state.messages = []
+                st.session_state.policy_note = ""
+                st.rerun()
+            if b2.button("📋 정책 노트 작성", key="make_note", use_container_width=True, type="primary"):
+                if len(st.session_state.messages) < 2:
+                    st.warning("대화를 조금 더 나눈 뒤 작성해주세요.")
+                else:
+                    hist_text = "\n".join(
+                        f"{'[질문]' if m['role']=='user' else '[답변]'} {m['content']}"
+                        for m in st.session_state.messages)
+                    with st.spinner("정책 노트 작성 중..."):
+                        note = call_gemini(f"""아래는 정책 공론장에서 나눈 대화입니다.
 이 대화를 바탕으로 주민 누구나 이해할 수 있는 쉬운 용어로 정책 제안 노트를 작성해주세요.
 반드시 아래 항목을 모두 포함하고 마크다운 형식으로 작성하세요:
 
@@ -899,28 +999,24 @@ with col_right:
 --- 대화 내용 ---
 {hist_text[:20000]}
 """)
-                st.session_state.policy_note = note
-                st.rerun()
+                    st.session_state.policy_note = note
+                    st.rerun()
+
+        # 정책 노트 출력
+        if st.session_state.get("policy_note"):
+            st.markdown('<div class="note-area">', unsafe_allow_html=True)
+            st.markdown("### 📋 정책 노트")
+            st.markdown(st.session_state.policy_note)
+            dl1, dl2 = st.columns(2)
+            dl1.download_button("📥 노트 저장 (.md)", data=st.session_state.policy_note,
+                file_name=f"{selected_policy}_정책노트.md", mime="text/markdown", use_container_width=True)
+            if dl2.button("✕ 닫기", key="close_note", use_container_width=True):
+                st.session_state.policy_note = ""; st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════════════════════
-# 정책 노트 출력 영역 (채팅 아래 전체 너비)
-# ════════════════════════════════════════════════════════════════
-if st.session_state.get("policy_note"):
-    st.divider()
-    st.markdown('<div class="note-area">', unsafe_allow_html=True)
-    st.markdown("### 📋 정책 노트")
-    st.markdown(st.session_state.policy_note)
-    dl1, dl2 = st.columns(2)
-    dl1.download_button("📥 노트 저장 (.md)", data=st.session_state.policy_note,
-        file_name=f"{selected_policy}_정책노트.md", mime="text/markdown", use_container_width=True)
-    if dl2.button("✕ 닫기", key="close_note", use_container_width=True):
-        st.session_state.policy_note = ""; st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-# ════════════════════════════════════════════════════════════════
-# 소스 관리 (관리자 전용 — 접이식 패널)
+# 소스 관리 (관리자 전용)
 # ════════════════════════════════════════════════════════════════
 if st.session_state.is_admin:
     st.divider()
@@ -932,9 +1028,7 @@ if st.session_state.is_admin:
 
         with add1:
             st.markdown("##### PDF 파일을 드래그하거나 선택하세요")
-            st.caption("여러 파일을 한 번에 업로드할 수 있습니다. 한글 PDF도 지원합니다.")
-            uploaded_files = st.file_uploader(
-                "PDF 선택", type=["pdf"], accept_multiple_files=True,
+            uploaded_files = st.file_uploader("PDF 선택", type=["pdf"], accept_multiple_files=True,
                 key="pdf_uploader", label_visibility="collapsed")
             if uploaded_files:
                 existing_ids = {s["id"] for s in st.session_state.web_sources}
@@ -947,143 +1041,111 @@ if st.session_state.is_admin:
                             text = extract_pdf_bytes(uf.read())
                             if not text.strip():
                                 st.warning(f"'{uf.name}' — 텍스트를 추출할 수 없습니다."); continue
-                            ns = {"id": fid, "type": "pdf_upload",
-                                  "title": uf.name, "url": "", "text": text[:30000]}
+                            ns = {"id": fid, "type": "pdf_upload", "title": uf.name, "url": "", "text": text[:30000]}
                             st.session_state.web_sources.append(ns)
                             st.session_state[f"ck_{fid}"] = True
                             existing_ids.add(fid); new_count += 1
-                        except Exception as e:
-                            st.error(f"'{uf.name}' 오류: {e}")
+                        except Exception as e: st.error(f"'{uf.name}' 오류: {e}")
                 if new_count > 0:
                     save_sources(selected_policy, st.session_state.web_sources)
-                    st.success(f"✅ {new_count}개 PDF가 소스에 추가되었습니다."); st.rerun()
+                    st.success(f"✅ {new_count}개 PDF 추가됨"); st.rerun()
 
         with add2:
-            st.markdown("##### 웹사이트 또는 뉴스 기사 URL을 입력하세요")
-            url_col1, url_col2 = st.columns([4, 1])
-            url_in = url_col1.text_input("URL", placeholder="https://example.com/article",
-                                          key="url_in", label_visibility="collapsed")
-            if url_col2.button("추가", key="btn_url", use_container_width=True):
+            st.markdown("##### 웹사이트 또는 뉴스 기사 URL")
+            u1, u2 = st.columns([4, 1])
+            url_in = u1.text_input("URL", placeholder="https://...", key="url_in", label_visibility="collapsed")
+            if u2.button("추가", key="btn_url", use_container_width=True):
                 if url_in.strip().startswith("http"):
-                    with st.spinner("페이지 읽는 중..."):
+                    with st.spinner("읽는 중..."):
                         try:
                             title, text = fetch_article(url_in.strip())
                             fid = str(abs(hash(url_in)))[:10]
-                            ns = {"id": fid, "type": "article",
-                                  "title": title, "url": url_in.strip(), "text": text[:20000]}
+                            ns = {"id": fid, "type": "article", "title": title, "url": url_in.strip(), "text": text[:20000]}
                             st.session_state.web_sources.append(ns)
                             st.session_state[f"ck_{fid}"] = True
                             save_sources(selected_policy, st.session_state.web_sources)
-                            st.success(f"✅ 추가됨: {title[:40]}"); st.rerun()
+                            st.success(f"✅ {title[:40]}"); st.rerun()
                         except Exception as e: st.error(f"실패: {e}")
-                else:
-                    st.warning("올바른 URL(https://...)을 입력하세요.")
-
+                else: st.warning("https://... 형식으로 입력하세요.")
             st.divider()
-            st.markdown("##### 키워드로 검색해서 추가")
-            kw_col1, kw_col2 = st.columns([4, 1])
-            kw_in = kw_col1.text_input("검색어", placeholder="예: 마을활동가 인정체계 사례",
-                                        key="kw_in", label_visibility="collapsed")
-            if kw_col2.button("검색", key="btn_kw", use_container_width=True):
-                with st.spinner("검색 중..."):
-                    st.session_state.search_res = search_web(kw_in)
+            st.markdown("##### 키워드 검색")
+            k1, k2 = st.columns([4, 1])
+            kw_in = k1.text_input("검색어", placeholder="예: 마을활동가 인정체계", key="kw_in", label_visibility="collapsed")
+            if k2.button("검색", key="btn_kw", use_container_width=True):
+                with st.spinner("검색 중..."): st.session_state.search_res = search_web(kw_in)
             for i, r in enumerate(st.session_state.get("search_res", [])):
                 with st.container(border=True):
                     rc1, rc2 = st.columns([5, 1])
                     with rc1:
-                        st.markdown(f"**{r['title'][:50]}**")
-                        st.caption(f"{r['snippet'][:100]}…")
-                        st.caption(f"🔗 {r['url'][:60]}")
+                        st.markdown(f"**{r['title'][:50]}**"); st.caption(f"{r['snippet'][:100]}…"); st.caption(f"🔗 {r['url'][:60]}")
                     with rc2:
                         if st.button("추가", key=f"add_{i}", use_container_width=True):
                             with st.spinner("읽는 중..."):
                                 try: title, text = fetch_article(r["url"])
                                 except: title, text = r["title"], r["snippet"]
                                 fid = str(abs(hash(r["url"])))[:10]
-                                ns = {"id": fid, "type": "article",
-                                      "title": title, "url": r["url"], "text": text[:20000]}
+                                ns = {"id": fid, "type": "article", "title": title, "url": r["url"], "text": text[:20000]}
                                 st.session_state.web_sources.append(ns)
                                 st.session_state[f"ck_{fid}"] = True
-                                save_sources(selected_policy, st.session_state.web_sources)
-                                st.rerun()
+                                save_sources(selected_policy, st.session_state.web_sources); st.rerun()
 
         with add3:
-            st.markdown("##### 유튜브 영상 URL을 입력하면 자막(스크립트)을 추출합니다")
-            yt_col1, yt_col2 = st.columns([4, 1])
-            yt_in = yt_col1.text_input("YouTube URL", placeholder="https://www.youtube.com/watch?v=...",
-                                        key="yt_in", label_visibility="collapsed")
-            if yt_col2.button("추가", key="btn_yt", use_container_width=True):
+            st.markdown("##### 유튜브 자막 추출")
+            y1, y2 = st.columns([4, 1])
+            yt_in = y1.text_input("YouTube URL", placeholder="https://www.youtube.com/watch?v=...", key="yt_in", label_visibility="collapsed")
+            if y2.button("추가", key="btn_yt", use_container_width=True):
                 if "youtube.com" in yt_in or "youtu.be" in yt_in:
                     with st.spinner("자막 추출 중..."):
                         try:
                             title, text = fetch_youtube(yt_in.strip())
                             fid = str(abs(hash(yt_in)))[:10]
-                            ns = {"id": fid, "type": "youtube",
-                                  "title": title, "url": yt_in.strip(), "text": text[:20000]}
+                            ns = {"id": fid, "type": "youtube", "title": title, "url": yt_in.strip(), "text": text[:20000]}
                             st.session_state.web_sources.append(ns)
                             st.session_state[f"ck_{fid}"] = True
                             save_sources(selected_policy, st.session_state.web_sources)
-                            st.success(f"✅ 추가됨: {title[:40]}"); st.rerun()
+                            st.success(f"✅ {title[:40]}"); st.rerun()
                         except Exception as e: st.error(f"실패: {e}")
-                else:
-                    st.warning("유튜브 URL을 입력하세요.")
+                else: st.warning("유튜브 URL을 입력하세요.")
 
         with add4:
-            st.markdown("##### 📊 엑셀 파일로 URL 일괄 등록")
-            st.caption("엑셀(.xlsx) 파일에 URL 목록을 정리해서 업로드하면 자동으로 소스에 추가돼요.")
+            st.markdown("##### 엑셀 일괄 등록")
             if EXCEL_OK:
                 import openpyxl
-                wb_sample = openpyxl.Workbook()
-                ws = wb_sample.active; ws.title = "URL 목록"
-                ws.append(["URL", "제목(선택)", "유형(선택)"])
-                ws.append(["https://example.com/article1", "기사 제목", "article"])
-                ws.append(["https://www.youtube.com/watch?v=xxxxx", "유튜브 영상", "youtube"])
-                ws.append(["https://news.example.com/policy", "", ""])
-                ws.column_dimensions['A'].width = 50
-                ws.column_dimensions['B'].width = 30
-                ws.column_dimensions['C'].width = 15
-                buf = io.BytesIO(); wb_sample.save(buf)
-                st.download_button("📥 엑셀 양식 다운로드", data=buf.getvalue(),
+                wb_s = openpyxl.Workbook(); ws_s = wb_s.active; ws_s.title = "URL 목록"
+                ws_s.append(["URL","제목(선택)","유형(선택)"])
+                ws_s.append(["https://example.com","기사 제목","article"])
+                ws_s.append(["https://www.youtube.com/watch?v=xxxxx","유튜브","youtube"])
+                ws_s.column_dimensions['A'].width = 50; ws_s.column_dimensions['B'].width = 30
+                buf2 = io.BytesIO(); wb_s.save(buf2)
+                st.download_button("📥 엑셀 양식 다운로드", data=buf2.getvalue(),
                     file_name="소스_URL_양식.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True)
-            else:
-                st.warning("openpyxl 패키지가 필요합니다. requirements.txt를 확인하세요.")
-
             st.markdown("---")
-            st.caption("1행은 헤더(URL / 제목 / 유형)로 인식하고, 2행부터 읽어요. URL 열만 있어도 됩니다.")
-            excel_file = st.file_uploader("엑셀 파일 선택", type=["xlsx"],
-                key="excel_uploader", label_visibility="collapsed")
+            excel_file = st.file_uploader("엑셀 파일 선택", type=["xlsx"], key="excel_uploader", label_visibility="collapsed")
             if excel_file and EXCEL_OK:
                 try:
-                    wb = openpyxl.load_workbook(io.BytesIO(excel_file.read()))
-                    ws = wb.active
-                    rows = list(ws.iter_rows(values_only=True))
-                    if len(rows) < 2:
-                        st.warning("데이터 행이 없어요. 2행부터 URL을 입력해주세요.")
+                    wb2 = openpyxl.load_workbook(io.BytesIO(excel_file.read()))
+                    ws2 = wb2.active; rows = list(ws2.iter_rows(values_only=True))
+                    if len(rows) < 2: st.warning("2행부터 URL을 입력해주세요.")
                     else:
                         header = [str(c).strip().lower() if c else "" for c in rows[0]]
-                        url_col_idx = next((i for i, h in enumerate(header) if "url" in h), 0)
-                        title_col_idx = next((i for i, h in enumerate(header) if "제목" in h or "title" in h), None)
-                        type_col_idx = next((i for i, h in enumerate(header) if "유형" in h or "type" in h), None)
-                        data_rows = rows[1:]
-                        valid = [(r[url_col_idx], r[title_col_idx] if title_col_idx is not None else None,
-                                  r[type_col_idx] if type_col_idx is not None else None)
-                                 for r in data_rows if r[url_col_idx] and str(r[url_col_idx]).startswith("http")]
-                        st.info(f"📋 총 {len(valid)}개 URL이 감지됐어요.")
-                        for i, (url, title, utype) in enumerate(valid[:20]):
-                            icon = "▶️" if ("youtube" in str(url) or "youtu.be" in str(url)) else "🔗"
+                        uc = next((i for i, h in enumerate(header) if "url" in h), 0)
+                        tc = next((i for i, h in enumerate(header) if "제목" in h or "title" in h), None)
+                        valid = [(r[uc], r[tc] if tc is not None else None)
+                                 for r in rows[1:] if r[uc] and str(r[uc]).startswith("http")]
+                        st.info(f"📋 {len(valid)}개 URL 감지")
+                        for i, (url, title) in enumerate(valid[:20]):
+                            icon = "▶️" if "youtube" in str(url) else "🔗"
                             st.markdown(f"`{i+1}` {icon} {str(url)[:70]}" + (f" — *{title}*" if title else ""))
                         if len(valid) > 20: st.caption(f"… 외 {len(valid)-20}개")
                         if st.button("✅ 전체 소스 추가 시작", type="primary", use_container_width=True, key="excel_add"):
                             existing_ids = {s["id"] for s in st.session_state.web_sources}
                             added, skipped, failed = 0, 0, 0
-                            progress = st.progress(0, text="소스 추가 중...")
-                            for i, (url, hint_title, hint_type) in enumerate(valid):
-                                url = str(url).strip()
-                                fid = str(abs(hash(url)))[:10]
-                                if fid in existing_ids:
-                                    skipped += 1
+                            prog = st.progress(0, text="추가 중...")
+                            for i, (url, hint_title) in enumerate(valid):
+                                url = str(url).strip(); fid = str(abs(hash(url)))[:10]
+                                if fid in existing_ids: skipped += 1
                                 else:
                                     try:
                                         is_yt = "youtube.com" in url or "youtu.be" in url
@@ -1094,55 +1156,34 @@ if st.session_state.is_admin:
                                         st.session_state.web_sources.append(ns)
                                         st.session_state[f"ck_{fid}"] = True
                                         existing_ids.add(fid); added += 1
-                                    except Exception: failed += 1
-                                progress.progress((i + 1) / len(valid),
-                                                  text=f"처리 중 {i+1}/{len(valid)} — 추가 {added} / 실패 {failed}")
+                                    except: failed += 1
+                                prog.progress((i+1)/len(valid), text=f"{i+1}/{len(valid)} 처리 중")
                             save_sources(selected_policy, st.session_state.web_sources)
-                            progress.empty()
-                            st.success(f"✅ 완료! 추가 {added}개 · 중복 스킵 {skipped}개 · 실패 {failed}개"); st.rerun()
-                except Exception as e:
-                    st.error(f"파일 읽기 오류: {e}")
+                            prog.empty(); st.success(f"✅ 추가 {added} · 스킵 {skipped} · 실패 {failed}"); st.rerun()
+                except Exception as e: st.error(f"파일 읽기 오류: {e}")
 
         st.divider()
-        st.markdown(f"### 📚 현재 소스 목록")
+        st.markdown(f"### 📚 현재 소스 목록 — {policy_display(selected_policy)}")
         if pdfs:
-            st.markdown(f"**📄 폴더 PDF** ({len(pdfs)}개) — 서버에 저장된 파일")
+            st.markdown(f"**📄 폴더 PDF** ({len(pdfs)}개)")
             for fname in pdfs:
-                st.markdown(f"""<div class="src-card">
-  <div class="src-card-icon">📄</div>
-  <div class="src-card-body">
-    <div class="src-card-title">{fname}</div>
-    <div class="src-card-meta">폴더 파일 · {len(pdfs[fname])//1000}K자</div>
-    <span class="src-card-badge badge-pdf">PDF</span>
-  </div>
-</div>""", unsafe_allow_html=True)
-
+                st.markdown(f'<div class="src-card"><div class="src-card-icon">📄</div><div class="src-card-body"><div class="src-card-title">{fname}</div><div class="src-card-meta">폴더 파일 · {len(pdfs[fname])//1000}K자</div><span class="src-card-badge badge-pdf">PDF</span></div></div>', unsafe_allow_html=True)
         if st.session_state.web_sources:
             st.markdown(f"**🌐 추가된 소스** ({len(st.session_state.web_sources)}개)")
             for src in list(st.session_state.web_sources):
-                stype = src.get("type", "article")
-                icon  = src_icon(stype)
-                badge = src_badge(stype)
+                stype = src.get("type","article")
                 url_disp = f'<a href="{src["url"]}" target="_blank">{src["url"][:50]}</a>' if src.get("url") else "업로드 파일"
                 chars = len(src.get("text","")) // 1000
-                c_main, c_del = st.columns([10, 1])
-                with c_main:
-                    st.markdown(f"""<div class="src-card">
-  <div class="src-card-icon">{icon}</div>
-  <div class="src-card-body">
-    <div class="src-card-title">{src['title']}</div>
-    <div class="src-card-meta">{url_disp} · {chars}K자</div>
-    {badge}
-  </div>
-</div>""", unsafe_allow_html=True)
-                with c_del:
+                cm, cd = st.columns([10, 1])
+                with cm:
+                    st.markdown(f'<div class="src-card"><div class="src-card-icon">{src_icon(stype)}</div><div class="src-card-body"><div class="src-card-title">{src["title"]}</div><div class="src-card-meta">{url_disp} · {chars}K자</div>{src_badge(stype)}</div></div>', unsafe_allow_html=True)
+                with cd:
                     st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
                     if st.button("🗑️", key=f"del_{src['id']}", help="소스 삭제"):
-                        st.session_state.web_sources = [
-                            s for s in st.session_state.web_sources if s["id"] != src["id"]]
+                        st.session_state.web_sources = [s for s in st.session_state.web_sources if s["id"] != src["id"]]
                         save_sources(selected_policy, st.session_state.web_sources); st.rerun()
         else:
-            st.info("추가된 웹/유튜브/업로드 소스가 없습니다. 위에서 추가하세요.")
+            st.info("추가된 소스가 없습니다.")
 
 
 # ════════════════════════════════════════════════════════════════
@@ -1150,33 +1191,20 @@ if st.session_state.is_admin:
 # ════════════════════════════════════════════════════════════════
 st.markdown("""
 <div style="
-  margin-top: 40px;
-  padding: 16px 24px;
-  border-top: 1px solid #D0D0D0;
-  background: #F8F9FA;
-  border-radius: 0 0 12px 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: .80rem;
-  color: #666;
-  line-height: 1.7;
+  margin-top:44px;padding:16px 24px;
+  border-top:1px solid #EEEEEE;
+  background:#FAFAFA;border-radius:0 0 12px 12px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:8px;font-size:.79rem;color:#AAA;line-height:1.7;
 ">
   <div>
     © 2026 위서영 &nbsp;/&nbsp;
     <a href="https://creativecommons.org/licenses/by/4.0/deed.ko"
-       target="_blank" style="color:#2E7D32;text-decoration:none;">
-      CC BY 4.0 (저작권표시)
-    </a>
+       target="_blank" style="color:#888;text-decoration:none;">CC BY 4.0 (저작권표시)</a>
     &nbsp;·&nbsp; 위서영(위트콘텐츠연구소) &nbsp;·&nbsp;
     010-9887-9366 &nbsp;/&nbsp;
-    <a href="mailto:witconlab@naver.com"
-       style="color:#2E7D32;text-decoration:none;">witconlab@naver.com</a>
+    <a href="mailto:witconlab@naver.com" style="color:#888;text-decoration:none;">witconlab@naver.com</a>
   </div>
-  <div style="text-align:right;color:#888;">
-    💾 데이터는 메모리에만 유지 (새로고침 시 초기화)
-  </div>
+  <div>💾 데이터는 메모리에만 유지 (새로고침 시 초기화)</div>
 </div>
 """, unsafe_allow_html=True)
