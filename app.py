@@ -6,6 +6,11 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 from duckduckgo_search import DDGS
 import datetime
+try:
+    import openpyxl
+    EXCEL_OK = True
+except ImportError:
+    EXCEL_OK = False
 
 try:
     from youtube_transcript_api import YouTubeTranscriptApi
@@ -825,7 +830,7 @@ if tab_sources is not None:
         st.caption("이곳에서 추가한 소스는 즉시 챗봇에 반영됩니다.")
 
         # ── 소스 추가 영역 ──────────────────────────────────
-        add1, add2, add3 = st.tabs(["📤 PDF 업로드", "🔗 웹 / 뉴스 링크", "🎥 유튜브"])
+        add1, add2, add3, add4 = st.tabs(["📤 PDF 업로드", "🔗 웹 / 뉴스 링크", "🎥 유튜브", "📊 엑셀 일괄 등록"])
 
         # ── PDF 업로드 ───────────────────────────────────
         with add1:
@@ -940,6 +945,112 @@ if tab_sources is not None:
                             st.error(f"실패: {e}")
                 else:
                     st.warning("유튜브 URL을 입력하세요.")
+
+        # ── 엑셀 일괄 등록 ─────────────────────────────────
+        with add4:
+            st.markdown("##### 📊 엑셀 파일로 URL 일괄 등록")
+            st.caption("엑셀(.xlsx) 파일에 URL 목록을 정리해서 업로드하면 자동으로 소스에 추가돼요.")
+
+            # 양식 다운로드
+            if EXCEL_OK:
+                import openpyxl
+                wb_sample = openpyxl.Workbook()
+                ws = wb_sample.active
+                ws.title = "URL 목록"
+                ws.append(["URL", "제목(선택)", "유형(선택)"])
+                ws.append(["https://example.com/article1", "기사 제목", "article"])
+                ws.append(["https://www.youtube.com/watch?v=xxxxx", "유튜브 영상", "youtube"])
+                ws.append(["https://news.example.com/policy", "", ""])
+                ws.column_dimensions['A'].width = 50
+                ws.column_dimensions['B'].width = 30
+                ws.column_dimensions['C'].width = 15
+                buf = io.BytesIO()
+                wb_sample.save(buf)
+                st.download_button(
+                    "📥 엑셀 양식 다운로드",
+                    data=buf.getvalue(),
+                    file_name="소스_URL_양식.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                )
+            else:
+                st.warning("openpyxl 패키지가 필요합니다. requirements.txt를 확인하세요.")
+
+            st.markdown("---")
+            st.markdown("##### 파일 업로드")
+            st.caption("1행은 헤더(URL / 제목 / 유형)로 인식하고, 2행부터 읽어요. URL 열만 있어도 됩니다.")
+
+            excel_file = st.file_uploader(
+                "엑셀 파일 선택", type=["xlsx"],
+                key="excel_uploader", label_visibility="collapsed"
+            )
+
+            if excel_file and EXCEL_OK:
+                try:
+                    wb = openpyxl.load_workbook(io.BytesIO(excel_file.read()))
+                    ws = wb.active
+                    rows = list(ws.iter_rows(values_only=True))
+
+                    if len(rows) < 2:
+                        st.warning("데이터 행이 없어요. 2행부터 URL을 입력해주세요.")
+                    else:
+                        # 헤더 파악: URL 열 위치 찾기
+                        header = [str(c).strip().lower() if c else "" for c in rows[0]]
+                        url_col = next((i for i, h in enumerate(header) if "url" in h), 0)
+                        title_col = next((i for i, h in enumerate(header) if "제목" in h or "title" in h), None)
+                        type_col = next((i for i, h in enumerate(header) if "유형" in h or "type" in h), None)
+
+                        data_rows = rows[1:]
+                        valid = [(r[url_col], r[title_col] if title_col is not None else None,
+                                  r[type_col] if type_col is not None else None)
+                                 for r in data_rows if r[url_col] and str(r[url_col]).startswith("http")]
+
+                        st.info(f"📋 총 {len(valid)}개 URL이 감지됐어요. 아래에서 확인 후 일괄 추가하세요.")
+
+                        # 미리보기
+                        for i, (url, title, utype) in enumerate(valid[:20]):
+                            icon = "▶️" if ("youtube" in str(url) or "youtu.be" in str(url)) else "🔗"
+                            st.markdown(f"`{i+1}` {icon} {str(url)[:70]}"
+                                        + (f" — *{title}*" if title else ""))
+                        if len(valid) > 20:
+                            st.caption(f"… 외 {len(valid)-20}개")
+
+                        if st.button("✅ 전체 소스 추가 시작", type="primary", use_container_width=True, key="excel_add"):
+                            existing_ids = {s["id"] for s in st.session_state.web_sources}
+                            added, skipped, failed = 0, 0, 0
+                            progress = st.progress(0, text="소스 추가 중...")
+                            for i, (url, hint_title, hint_type) in enumerate(valid):
+                                url = str(url).strip()
+                                fid = str(abs(hash(url)))[:10]
+                                if fid in existing_ids:
+                                    skipped += 1
+                                else:
+                                    try:
+                                        is_yt = "youtube.com" in url or "youtu.be" in url
+                                        if is_yt:
+                                            title, text = fetch_youtube(url)
+                                            stype = "youtube"
+                                        else:
+                                            title, text = fetch_article(url)
+                                            stype = "article"
+                                        if hint_title and str(hint_title).strip():
+                                            title = str(hint_title).strip()
+                                        ns = {"id": fid, "type": stype,
+                                              "title": title, "url": url, "text": text[:20000]}
+                                        st.session_state.web_sources.append(ns)
+                                        st.session_state[f"ck_{fid}"] = True
+                                        existing_ids.add(fid)
+                                        added += 1
+                                    except Exception:
+                                        failed += 1
+                                progress.progress((i + 1) / len(valid),
+                                                  text=f"처리 중 {i+1}/{len(valid)} — 추가 {added} / 실패 {failed}")
+                            save_sources(selected_policy, st.session_state.web_sources)
+                            progress.empty()
+                            st.success(f"✅ 완료! 추가 {added}개 · 중복 스킵 {skipped}개 · 실패 {failed}개")
+                            st.rerun()
+                except Exception as e:
+                    st.error(f"파일 읽기 오류: {e}")
 
         # ── 현재 소스 목록 ──────────────────────────────────
         st.divider()
