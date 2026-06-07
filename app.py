@@ -364,7 +364,8 @@ with st.sidebar:
             st.session_state.is_admin = False; st.rerun()
 
     st.divider()
-    st.caption("💡 동시 접속 200명 지원\n\nGemini 1.5 Flash 기반")
+    if st.session_state.get("is_admin"):
+        st.caption("💡 동시 접속 200명 지원 · Gemini 1.5 Flash 기반")
 
 
 # ════════════════════════════════════════════════════════════════
@@ -437,9 +438,9 @@ st.markdown(f"##### 📂 {policy_display(selected_policy)}")
 
 # 탭 구성 (관리자에게는 소스 관리 탭 추가)
 if st.session_state.is_admin:
-    tab_chat, tab_studio, tab_sources = st.tabs(["💬 채팅", "🎓 스튜디오", "🗂️ 소스 관리"])
+    tab_chat, tab_studio, tab_sources = st.tabs(["💬 채팅", "📝 정책 요약 노트", "🗂️ 소스 관리"])
 else:
-    tab_chat, tab_studio = st.tabs(["💬 채팅", "🎓 스튜디오"])
+    tab_chat, tab_studio = st.tabs(["💬 채팅", "📝 정책 요약 노트"])
     tab_sources = None
 
 
