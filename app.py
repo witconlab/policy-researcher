@@ -295,16 +295,25 @@ st.markdown("""
 # ════════════════════════════════════════════════════════════════
 # 상수 & API 초기화
 # ════════════════════════════════════════════════════════════════
-GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", os.environ.get("GOOGLE_API_KEY", ""))
-ADMIN_PASSWORD  = st.secrets.get("ADMIN_PASSWORD", "admin1234")
-POLICIES_DIR    = Path("policies")
+try:
+    GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", os.environ.get("GOOGLE_API_KEY", ""))
+    ADMIN_PASSWORD = st.secrets.get("ADMIN_PASSWORD", "admin1234")
+except Exception:
+    GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
+    ADMIN_PASSWORD = "admin1234"
+
+POLICIES_DIR = Path("policies")
+MODEL_NAME   = "gemini-2.5-flash-lite"
 
 if not GOOGLE_API_KEY:
-    st.error("Google API 키가 설정되지 않았습니다. Streamlit Secrets를 확인해주세요.")
+    st.error("⚠️ Google API 키가 설정되지 않았습니다. Streamlit Cloud → Settings → Secrets에서 GOOGLE_API_KEY를 입력해주세요.")
     st.stop()
 
-client = genai.Client(api_key=GOOGLE_API_KEY)
-MODEL_NAME = "gemini-2.5-flash-lite"
+try:
+    client = genai.Client(api_key=GOOGLE_API_KEY)
+except Exception as e:
+    st.error(f"⚠️ Gemini 클라이언트 초기화 실패: {e}")
+    st.stop()
 
 
 # ════════════════════════════════════════════════════════════════
