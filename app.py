@@ -605,7 +605,7 @@ if "selected_policy" not in st.session_state:
 
 selected_policy = st.session_state.selected_policy
 
-if st.session_state.get("_cur") != selected_policy:
+if "_cur" not in st.session_state or st.session_state._cur != selected_policy:
     st.session_state._cur         = selected_policy
     st.session_state.messages     = []
     st.session_state.web_sources  = load_saved_sources(selected_policy) if selected_policy else []
