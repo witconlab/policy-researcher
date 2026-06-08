@@ -14,6 +14,13 @@ except ImportError:
     EXCEL_OK = False
 
 try:
+    from pptx import Presentation as PptxPresentation
+    from pptx.util import Pt
+    PPTX_OK = True
+except ImportError:
+    PPTX_OK = False
+
+try:
     from youtube_transcript_api import YouTubeTranscriptApi
     YOUTUBE_OK = True
 except Exception:
@@ -525,13 +532,15 @@ def get_policies():
     return sorted(dirs, key=sort_key)
 
 def policy_display(name):
-    return name.replace("-", " ")
+    return name.replace("-", " ") if name else "정책 미선택"
 
 def policy_short(name):
+    if not name: return "미선택"
     s = re.sub(r'^\d+\.', '', name).replace("-", " ").strip()
     return s
 
 def policy_num(name):
+    if not name: return "?"
     m = re.match(r'^(\d+)', name)
     return m.group(1) if m else "?"
 
@@ -592,14 +601,14 @@ with st.sidebar:
 # 세션 초기화
 # ════════════════════════════════════════════════════════════════
 if "selected_policy" not in st.session_state:
-    st.session_state.selected_policy = policies[0]
+    st.session_state.selected_policy = None   # 미선택 상태에서 시작
 
 selected_policy = st.session_state.selected_policy
 
 if st.session_state.get("_cur") != selected_policy:
     st.session_state._cur         = selected_policy
     st.session_state.messages     = []
-    st.session_state.web_sources  = load_saved_sources(selected_policy)
+    st.session_state.web_sources  = load_saved_sources(selected_policy) if selected_policy else []
     st.session_state.search_res   = []
     st.session_state.fc_idx       = 0
     st.session_state.fc_show      = False
@@ -609,8 +618,14 @@ if st.session_state.get("_cur") != selected_policy:
     st.session_state.qz_done      = False
     st.session_state.policy_note  = ""
     st.session_state.upload_done  = []
+    st.session_state.slide_idx    = 0
+    st.session_state.card_slide_idx  = 0
+    st.session_state.mat_sel         = None
+    st.session_state.pptx_slide_idx  = 0
+    st.session_state._pptx_cache_key = None
+    st.session_state.sl_sel          = None
 
-pdfs = load_pdfs(selected_policy)
+pdfs = load_pdfs(selected_policy) if selected_policy else {}
 
 for f in pdfs:
     if f"ck_{f}" not in st.session_state:
@@ -712,22 +727,53 @@ with tab_select:
                     st.rerun()
 
     st.divider()
-    st.markdown(f"**현재 선택된 테이블:** 📂 {policy_display(selected_policy)}")
-    st.caption("위에서 정책을 선택한 뒤 상단 탭 '정책 질의응답 챗봇' 또는 '사전 학습 정책 노트'로 이동하세요.")
+
+    # ── 선택 결과 / 안내 배너 ──────────────────────────────────
+    if selected_policy:
+        idx_sel = policies.index(selected_policy)
+        icon_sel = POLICY_ICONS[idx_sel] if idx_sel < len(POLICY_ICONS) else "📌"
+        st.markdown(f"""
+<div style="background:#FFF9C4;border:2px solid #FFD600;border-radius:12px;
+            padding:18px 22px;display:flex;align-items:center;gap:14px;">
+  <div style="font-size:2rem">{icon_sel}</div>
+  <div style="flex:1">
+    <div style="font-size:.78rem;color:#888;margin-bottom:3px">✅ 선택된 공론장 테이블</div>
+    <div style="font-size:1.1rem;font-weight:800;color:#1A1A1A">{policy_display(selected_policy)}</div>
+    <div style="font-size:.82rem;color:#666;margin-top:5px">
+      위 탭에서 <b>💬 정책 질의응답 챗봇</b> 또는 <b>📝 사전 학습 정책 노트</b>를 눌러 시작하세요.
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+    else:
+        st.info("👆 위에서 공론장 테이블을 선택하면 챗봇과 정책 노트가 활성화됩니다.")
+
+    # 관리자: PDF 캐시 새로고침
+    if st.session_state.is_admin and selected_policy:
+        st.markdown("")
+        if st.button("🔄 PDF 목록 새로고침 (새 파일 반영)", key="refresh_pdf"):
+            load_pdfs.clear()
+            st.success("✅ 캐시 초기화 완료 — 페이지를 새로고침해 주세요.")
+            st.rerun()
 
 
 # ════════════════════════════════════════════════════════════════
 # 탭 2 ─ 사전 학습 정책 노트 (스튜디오)
 # ════════════════════════════════════════════════════════════════
 with tab_studio:
-    st.markdown(f'<div class="sec-header">📝 {policy_display(selected_policy)} — 사전 학습 정책 노트</div>',
-                unsafe_allow_html=True)
+    if not selected_policy:
+        st.info("👆 첫 번째 탭 **'🗂️ 공론장 테이블 선택'** 에서 의제를 선택하면 정책 노트가 활성화됩니다.")
+        scache = {}
+        combined = ""
+    else:
+        st.markdown(f'<div class="sec-header">📝 {policy_display(selected_policy)} — 사전 학습 정책 노트</div>',
+                    unsafe_allow_html=True)
 
-    all_src_text = {f: pdfs[f] for f in pdfs}
-    for s in st.session_state.web_sources:
-        all_src_text[s["title"]] = s.get("text", "")
-    combined = "\n\n".join(f"[{fn}]\n{tx[:3000]}" for fn, tx in all_src_text.items())
-    scache = load_studio_cache(selected_policy)
+        all_src_text = {f: pdfs[f] for f in pdfs}
+        for s in st.session_state.web_sources:
+            all_src_text[s["title"]] = s.get("text", "")
+        combined = "\n\n".join(f"[{fn}]\n{tx[:3000]}" for fn, tx in all_src_text.items())
+        scache = load_studio_cache(selected_policy)
 
     # ── 생성 함수 ─────────────────────────────────────────────
     def do_gen_summary(pol, c):
@@ -796,6 +842,134 @@ answer는 정답 인덱스(0~3).
 border-radius:8px;padding:13px 16px;margin-bottom:10px;border:1px solid #EEEEEE;border-left-width:4px;">
 <b style="color:#1A1A1A">{'🏷️ '+kw+' · ' if kw else ''}{c.get('title','')}</b>
 <ul style="margin:7px 0 0;padding-left:17px;color:#444;font-size:.85rem;line-height:1.7">{pts}</ul>
+</div>""", unsafe_allow_html=True)
+
+    def show_cards_slide(cards):
+        """AI 요약카드를 슬라이드(1장씩) 형태로 표시"""
+        n = len(cards)
+        if "card_slide_idx" not in st.session_state:
+            st.session_state.card_slide_idx = 0
+        idx = st.session_state.card_slide_idx % n
+        card = cards[idx]
+        kw  = card.get("keyword", "")
+        pts = "".join(f"<li style='margin-bottom:6px'>{p}</li>" for p in card.get("points", []))
+        # 슬라이드 카드
+        st.markdown(f"""
+<div style="background:linear-gradient(135deg,#FFFDE7 0%,#FFF9C4 100%);
+            border:2px solid #FFD600;border-radius:18px;
+            padding:34px 30px 28px;min-height:220px;
+            box-shadow:0 4px 16px rgba(255,214,0,.18);margin:6px 0 14px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    {'<span style="background:#FFD600;padding:3px 11px;border-radius:20px;font-size:.75rem;font-weight:800;color:#1A1A1A">🏷️ '+kw+'</span>' if kw else ''}
+    <span style="font-size:1.08rem;font-weight:800;color:#1A1A1A;line-height:1.3">{card.get("title","")}</span>
+  </div>
+  <ul style="margin:0;padding-left:20px;color:#333;font-size:.93rem;line-height:1.9">{pts}</ul>
+</div>""", unsafe_allow_html=True)
+        # 진행바 + 네비
+        st.progress((idx + 1) / n)
+        c1, c2, c3 = st.columns([1, 2, 1])
+        if c1.button("◀ 이전", key="card_prev", use_container_width=True):
+            st.session_state.card_slide_idx = (idx - 1) % n; st.rerun()
+        c2.markdown(f"<div style='text-align:center;font-size:.85rem;color:#888;padding:7px 0'>"
+                    f"<b>{idx+1}</b> / {n}</div>", unsafe_allow_html=True)
+        if c3.button("다음 ▶", key="card_next", use_container_width=True):
+            st.session_state.card_slide_idx = (idx + 1) % n; st.rerun()
+
+    def parse_pptx(pptx_bytes):
+        """PPTX에서 슬라이드별 제목·내용·노트를 추출해 리스트로 반환"""
+        if not PPTX_OK:
+            return []
+        slides_data = []
+        prs = PptxPresentation(io.BytesIO(pptx_bytes))
+        for i, slide in enumerate(prs.slides):
+            title = ""
+            body_lines = []
+            # 텍스트 프레임 순회
+            for shape in slide.shapes:
+                if not shape.has_text_frame:
+                    continue
+                txt = shape.text_frame.text.strip()
+                if not txt:
+                    continue
+                # 제목 placeholder 우선
+                if shape.shape_id == 1 or (hasattr(shape, "placeholder_format")
+                        and shape.placeholder_format is not None
+                        and shape.placeholder_format.idx == 0):
+                    title = txt
+                else:
+                    for para in shape.text_frame.paragraphs:
+                        line = para.text.strip()
+                        if line:
+                            body_lines.append(line)
+            # 노트
+            note = ""
+            if slide.has_notes_slide:
+                note_tf = slide.notes_slide.notes_text_frame
+                note = note_tf.text.strip() if note_tf else ""
+            slides_data.append({
+                "idx": i + 1,
+                "title": title or f"슬라이드 {i+1}",
+                "body": body_lines,
+                "note": note,
+            })
+        return slides_data
+
+    def show_pptx_slide(slides_data, idx):
+        """PPTX 슬라이드 1장을 PPT 스타일 카드로 렌더링"""
+        s = slides_data[idx]
+        body_html = ""
+        for line in s["body"]:
+            clean = line.lstrip("•-·▪*▸▶ ").strip()
+            if clean:
+                body_html += f"<li style='margin-bottom:7px'>{clean}</li>"
+        body_block = (
+            f"<ul style='margin:0;padding-left:22px;color:#222;"
+            f"font-size:.95rem;line-height:1.9'>{body_html}</ul>"
+            if body_html else
+            "<p style='color:#BBB;font-size:.88rem;font-style:italic'>내용 없음</p>"
+        )
+        note_block = (
+            f"<div style='margin-top:16px;padding:10px 14px;background:#FFFDE7;"
+            f"border-left:3px solid #FFD600;border-radius:0 6px 6px 0;"
+            f"font-size:.8rem;color:#666;line-height:1.6'>"
+            f"🗒️ 발표자 노트: {s['note']}</div>"
+            if s["note"] else ""
+        )
+        st.markdown(f"""
+<div style="border-radius:12px;overflow:hidden;
+            box-shadow:0 4px 20px rgba(0,0,0,.12);margin-bottom:10px">
+  <!-- 슬라이드 헤더 -->
+  <div style="background:linear-gradient(135deg,#1A1A1A 0%,#2A2A2A 100%);
+              padding:18px 24px 16px">
+    <div style="color:#FFD600;font-size:.72rem;font-weight:700;
+                letter-spacing:.08em;margin-bottom:6px">
+      SLIDE {s['idx']} / {len(slides_data)}
+    </div>
+    <div style="color:#FFFFFF;font-size:1.18rem;font-weight:800;line-height:1.35">
+      {s['title']}
+    </div>
+  </div>
+  <!-- 슬라이드 본문 -->
+  <div style="background:#FFFFFF;padding:24px 26px 20px;min-height:180px">
+    {body_block}
+    {note_block}
+  </div>
+</div>""", unsafe_allow_html=True)
+
+    def show_pdf_viewer(pdf_bytes, filename="", height=700):
+        """base64 인라인 PDF 뷰어"""
+        import base64
+        b64 = base64.b64encode(pdf_bytes).decode()
+        st.markdown(f"""
+<div style="border:1.5px solid #EEEEEE;border-radius:10px;overflow:hidden;margin-top:8px">
+  <div style="background:#F5F5F5;padding:8px 14px;font-size:.82rem;
+              color:#555;border-bottom:1px solid #EEE">
+    📄 {filename}
+  </div>
+  <iframe src="data:application/pdf;base64,{b64}#toolbar=1&navpanes=1&scrollbar=1"
+          width="100%" height="{height}px"
+          style="display:block;border:none;">
+  </iframe>
 </div>""", unsafe_allow_html=True)
 
     def show_info(info):
@@ -895,45 +1069,235 @@ border-radius:8px;padding:13px 16px;margin-bottom:10px;border:1px solid #EEEEEE;
                         save_studio_cache(selected_policy, scache)
                     st.success(f"✅ {lbl} 저장 완료!"); st.rerun()
 
-    # ── 콘텐츠 서브탭 (마인드맵 제외 — 관리자는 생성 패널에서 별도 관리) ──
-    s1, s2, s3, s4 = st.tabs(["📋 요약 카드", "📊 인포그래픽", "🃏 플래시카드", "🧠 퀴즈 & 보고서"])
+    # ── 콘텐츠 서브탭 (이용자 노출 4개) ───────────────────────
+    s_card, s_slide, s_info, s_fc = st.tabs([
+        "📋 요약 카드",
+        "📄 슬라이드",
+        "📊 인포그래픽",
+        "🃏 플래시카드",
+    ])
 
-    with s1:
-        cards = scache.get("summary")
-        if cards: show_cards(cards)
-        else: not_ready_msg()
+    # ════════ s_card — AI 요약 카드 ════════════════════════════
+    with s_card:
+        cards = scache.get("summary") or []
+        if cards:
+            st.markdown("""
+<div style="background:#1A1A1A;border-radius:14px 14px 0 0;padding:10px 16px">
+  <span style="color:#FFD600;font-weight:700;font-size:.88rem">🤖 AI 요약 슬라이드</span>
+</div>""", unsafe_allow_html=True)
+            show_cards_slide(cards)
+            with st.expander("📋 전체 카드 한눈에 보기", expanded=False):
+                show_cards(cards)
+        else:
+            not_ready_msg()
 
-    with s2:
+    # ════════ s_slide — 슬라이드 (PDF / PPTX 뷰어) ═════════════
+    with s_slide:
+        sl_dir = (POLICIES_DIR / selected_policy / "slides") if selected_policy else Path("slides_tmp")
+
+        # ── 관리자: 파일 업로드 ──────────────────────────────
+        if st.session_state.is_admin:
+            with st.expander("📤 슬라이드 파일 업로드 (관리자)", expanded=False):
+                st.caption("PDF 또는 PPTX 파일을 업로드하면 슬라이드 뷰어로 표시됩니다.")
+                sl_uploaded = st.file_uploader(
+                    "파일 선택 (PDF / PPTX)", type=["pdf", "pptx"],
+                    accept_multiple_files=True,
+                    key="sl_uploader", label_visibility="collapsed"
+                )
+                if sl_uploaded:
+                    sl_dir.mkdir(parents=True, exist_ok=True)
+                    saved = 0
+                    for uf in sl_uploaded:
+                        dest = sl_dir / uf.name
+                        dest.write_bytes(uf.read()); saved += 1
+                    if saved:
+                        st.success(f"✅ {saved}개 파일 저장됨"); st.rerun()
+
+                # 삭제
+                sl_all = sorted(sl_dir.iterdir()) if sl_dir.exists() else []
+                sl_viewable = [f for f in sl_all if f.suffix.lower() in (".pdf", ".pptx")]
+                if sl_viewable:
+                    del_sl = st.selectbox(
+                        "삭제할 파일", ["—"] + [f.name for f in sl_viewable], key="del_sl"
+                    )
+                    if del_sl != "—" and st.button("🗑️ 삭제", key="btn_del_sl"):
+                        (sl_dir / del_sl).unlink(missing_ok=True); st.rerun()
+
+        # ── 파일 목록 ────────────────────────────────────────
+        sl_all = sorted(sl_dir.iterdir()) if sl_dir.exists() else []
+        sl_viewable = [f for f in sl_all if f.suffix.lower() in (".pdf", ".pptx")]
+
+        if not sl_viewable:
+            not_ready_msg()
+        else:
+            # 파일 선택 버튼
+            sl_names = [f.name for f in sl_viewable]
+            if "sl_sel" not in st.session_state or st.session_state.sl_sel not in sl_names:
+                st.session_state.sl_sel = sl_names[0]
+
+            btn_cols = st.columns(min(len(sl_viewable), 4))
+            for bi, sf in enumerate(sl_viewable):
+                icon = "📄" if sf.suffix.lower() == ".pdf" else "📊"
+                is_sel = (sf.name == st.session_state.sl_sel)
+                with btn_cols[bi % 4]:
+                    if st.button(
+                        f"{icon} {sf.stem[:18]}{'…' if len(sf.stem)>18 else ''}",
+                        key=f"sl_btn_{bi}", use_container_width=True,
+                        type="primary" if is_sel else "secondary"
+                    ):
+                        st.session_state.sl_sel = sf.name
+                        st.session_state.pptx_slide_idx = 0
+                        st.rerun()
+
+            sel_path = sl_dir / st.session_state.sl_sel
+            if not sel_path.exists():
+                st.warning("파일을 찾을 수 없습니다.")
+            else:
+                st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+                suffix = sel_path.suffix.lower()
+
+                # ── PDF 뷰어 ─────────────────────────────────
+                if suffix == ".pdf":
+                    # 헤더 바
+                    hc1, hc2 = st.columns([4, 1])
+                    hc1.markdown(
+                        f"**📄 {sel_path.name}** "
+                        f"<span style='font-size:.78rem;color:#AAA'>"
+                        f"({sel_path.stat().st_size // 1024} KB)</span>",
+                        unsafe_allow_html=True
+                    )
+                    hc2.download_button(
+                        "📥 다운로드", data=sel_path.read_bytes(),
+                        file_name=sel_path.name, use_container_width=True,
+                        key="sl_pdf_dl"
+                    )
+                    # iframe 뷰어
+                    show_pdf_viewer(sel_path.read_bytes(), sel_path.name, height=780)
+
+                # ── PPTX 슬라이드 뷰어 ───────────────────────
+                elif suffix == ".pptx":
+                    cache_key = f"pptx_{sel_path}_{sel_path.stat().st_mtime}"
+                    if st.session_state.get("_pptx_cache_key") != cache_key:
+                        st.session_state._pptx_cache_key   = cache_key
+                        st.session_state._pptx_slides_data = parse_pptx(sel_path.read_bytes())
+                        st.session_state.pptx_slide_idx    = 0
+
+                    slides_data = st.session_state.get("_pptx_slides_data", [])
+                    if not slides_data:
+                        st.warning("슬라이드 내용을 읽을 수 없습니다.")
+                    else:
+                        n  = len(slides_data)
+                        pi = st.session_state.get("pptx_slide_idx", 0) % n
+
+                        # 헤더
+                        st.markdown(f"""
+<div style="background:#1A1A1A;border-radius:12px 12px 0 0;
+            padding:10px 18px;display:flex;align-items:center;justify-content:space-between">
+  <span style="color:#FFD600;font-weight:700;font-size:.88rem">📊 {sel_path.stem}</span>
+  <span style="color:#AAA;font-size:.82rem">{pi+1} / {n} 슬라이드</span>
+</div>""", unsafe_allow_html=True)
+                        show_pptx_slide(slides_data, pi)
+
+                        st.progress((pi + 1) / n)
+                        cp, cc, cn = st.columns([1, 2, 1])
+                        if cp.button("◀ 이전", key="pptx_prev", use_container_width=True):
+                            st.session_state.pptx_slide_idx = (pi - 1) % n; st.rerun()
+                        cc.markdown(
+                            f"<div style='text-align:center;color:#888;font-size:.85rem;padding:7px 0'>"
+                            f"<b>{pi+1}</b> / {n}</div>", unsafe_allow_html=True)
+                        if cn.button("다음 ▶", key="pptx_next", use_container_width=True):
+                            st.session_state.pptx_slide_idx = (pi + 1) % n; st.rerun()
+
+                        with st.expander("📋 슬라이드 목차", expanded=False):
+                            toc_cols = st.columns(2)
+                            for ti, sd in enumerate(slides_data):
+                                with toc_cols[ti % 2]:
+                                    lbl = f"{'▶ ' if ti==pi else ''}{ti+1}. {sd['title'][:26]}"
+                                    if st.button(lbl, key=f"toc_{ti}", use_container_width=True,
+                                                 type="primary" if ti==pi else "secondary"):
+                                        st.session_state.pptx_slide_idx = ti; st.rerun()
+
+                        st.download_button(
+                            "📥 원본 PPTX 다운로드",
+                            data=sel_path.read_bytes(), file_name=sel_path.name,
+                            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                            use_container_width=True, key="pptx_dl"
+                        )
+
+    # ════════ s_info — 인포그래픽 ══════════════════════════════
+    with s_info:
         info = scache.get("info")
         if info: show_info(info)
         else: not_ready_msg()
 
-    with s3:
+    # ════════ s_fc — 플래시카드 ═════════════════════════════════
+    with s_fc:
         fc = scache.get("flashcards")
         if fc: show_fc(fc)
         else: not_ready_msg()
 
-    with s4:
-        ql, qr = st.columns(2)
-        with ql:
-            st.markdown("#### 🧠 퀴즈")
-            qz = scache.get("quiz")
-            if qz: show_qz(qz)
-            else: not_ready_msg()
-        with qr:
-            st.markdown("#### 📄 보고서")
-            report = scache.get("report")
-            if report:
-                st.markdown(report[:2000] + ("…" if len(report) > 2000 else ""))
-                st.download_button("📥 보고서 (.md)", data=report,
-                    file_name=f"{selected_policy}_보고서.md", mime="text/markdown", use_container_width=True)
-            else: not_ready_msg()
+    # ════════ 퀴즈·보고서·자료실 — 관리자 숨김 영역 ══════════════
+    if st.session_state.is_admin:
+        with st.expander("🔒 관리자 전용 — 퀴즈 · 보고서 · 자료실", expanded=False):
+            adm_q, adm_r = st.columns(2)
+            with adm_q:
+                st.markdown("#### 🧠 퀴즈")
+                qz = scache.get("quiz")
+                if qz: show_qz(qz)
+                else: not_ready_msg()
+            with adm_r:
+                st.markdown("#### 📄 보고서")
+                report = scache.get("report")
+                if report:
+                    st.markdown(report[:2000] + ("…" if len(report) > 2000 else ""))
+                    st.download_button("📥 보고서 (.md)", data=report,
+                        file_name=f"{selected_policy}_보고서.md",
+                        mime="text/markdown", use_container_width=True)
+                else: not_ready_msg()
+
+            st.divider()
+            st.markdown("#### 📚 자료실")
+            mat_dir = (POLICIES_DIR / selected_policy / "materials") if selected_policy else Path("materials_tmp")
+            mat_files_up = st.file_uploader(
+                "자료 업로드 (PDF/이미지)", type=["pdf","png","jpg","jpeg"],
+                accept_multiple_files=True, key="mat_uploader", label_visibility="collapsed"
+            )
+            if mat_files_up:
+                mat_dir.mkdir(parents=True, exist_ok=True)
+                for mf in mat_files_up:
+                    (mat_dir / mf.name).write_bytes(mf.read())
+                st.success(f"✅ {len(mat_files_up)}개 저장됨"); st.rerun()
+
+            mat_items = sorted(mat_dir.iterdir()) if mat_dir.exists() else []
+            if mat_items:
+                del_mat = st.selectbox("삭제", ["—"] + [f.name for f in mat_items], key="del_mat")
+                if del_mat != "—" and st.button("🗑️ 삭제", key="btn_del_mat"):
+                    (mat_dir / del_mat).unlink(missing_ok=True); st.rerun()
+                for mf in mat_items:
+                    icon = "📄" if mf.suffix.lower() == ".pdf" else "🖼️"
+                    st.caption(f"{icon} {mf.name}  ({mf.stat().st_size // 1024} KB)")
+
+                if suffix == ".pdf":
+                    # PDF 인라인 뷰어
+                    show_pdf_viewer(sel_path.read_bytes(), sel_path.name, height=750)
+                elif suffix in [".png", ".jpg", ".jpeg"]:
+                    st.image(str(sel_path), use_container_width=True)
+            else:
+                st.warning("선택한 파일을 찾을 수 없습니다.")
 
 
 # ════════════════════════════════════════════════════════════════
 # 탭 3 ─ 정책 질의응답 챗봇
 # ════════════════════════════════════════════════════════════════
 with tab_chat:
+    if not selected_policy:
+        st.info("👆 첫 번째 탭 **'🗂️ 공론장 테이블 선택'** 에서 의제를 선택하면 챗봇이 활성화됩니다.")
+        st.markdown("""
+<div style="text-align:center;padding:40px 20px">
+  <div style="font-size:3rem;margin-bottom:12px">💬</div>
+  <div style="font-size:1rem;font-weight:700;color:#BBB">공론장 테이블을 선택하면<br>챗봇이 여기에 열립니다</div>
+</div>""", unsafe_allow_html=True)
+
     chat_col, src_col = st.columns([2.2, 1], gap="large")
 
     # ── 소스 패널 (오른쪽) ──────────────────────────────────
@@ -945,42 +1309,67 @@ with tab_chat:
         active_web   = [s for s in web_srcs    if st.session_state.get(f"ck_{s['id']}", True)]
         total_active = len(active_pdfs) + len(active_up) + len(active_web)
 
+        # ── 참고 소스 헤더 ──────────────────────────────────
         st.markdown(f"""
 <div style="background:#FAFAFA;border:1px solid #EEEEEE;border-radius:10px;
-            padding:12px 14px;margin-bottom:8px;">
+            padding:12px 14px;margin-bottom:10px;">
   <div style="font-weight:700;font-size:.9rem;color:#1A1A1A;margin-bottom:2px">
     📎 참고 소스
   </div>
-  <div style="font-size:.78rem;color:#AAA">{total_active}개 선택됨</div>
+  <div style="font-size:.78rem;color:#AAA">
+    총 {len(pdfs) + len(st.session_state.web_sources)}개 &nbsp;·&nbsp;
+    <span style="color:#FFB300;font-weight:600">{total_active}개 선택됨</span>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
+        # 전체 선택/해제
         ca, cb = st.columns(2)
-        if ca.button("전체 선택", use_container_width=True, key="sel"):
+        if ca.button("✅ 전체 선택", use_container_width=True, key="sel"):
             for f in pdfs: st.session_state[f"ck_{f}"] = True
             for s in st.session_state.web_sources: st.session_state[f"ck_{s['id']}"] = True
             st.rerun()
-        if cb.button("전체 해제", use_container_width=True, key="desel"):
+        if cb.button("☐ 전체 해제", use_container_width=True, key="desel"):
             for f in pdfs: st.session_state[f"ck_{f}"] = False
             for s in st.session_state.web_sources: st.session_state[f"ck_{s['id']}"] = False
             st.rerun()
 
+        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+
+        # ── PDF 문서 토글 ────────────────────────────────────
         if pdfs:
-            st.markdown('<div class="src-header">📄 PDF 문서</div>', unsafe_allow_html=True)
-            for fname in pdfs:
-                st.checkbox(fname[:26] + ("…" if len(fname) > 26 else ""),
-                            key=f"ck_{fname}", value=st.session_state.get(f"ck_{fname}", True))
+            pdf_active = sum(1 for f in pdfs if st.session_state.get(f"ck_{f}", True))
+            with st.expander(f"📄 PDF 문서  ({pdf_active}/{len(pdfs)}개 선택)", expanded=False):
+                for fname in pdfs:
+                    st.checkbox(
+                        fname[:28] + ("…" if len(fname) > 28 else ""),
+                        key=f"ck_{fname}",
+                        value=st.session_state.get(f"ck_{fname}", True)
+                    )
+
+        # ── 업로드 PDF 토글 ──────────────────────────────────
         if upload_srcs:
-            st.markdown('<div class="src-header">📤 업로드 PDF</div>', unsafe_allow_html=True)
-            for src in upload_srcs:
-                st.checkbox(src["title"][:24] + ("…" if len(src["title"]) > 24 else ""),
-                            key=f"ck_{src['id']}", value=st.session_state.get(f"ck_{src['id']}", True))
+            up_active = sum(1 for s in upload_srcs if st.session_state.get(f"ck_{s['id']}", True))
+            with st.expander(f"📤 업로드 PDF  ({up_active}/{len(upload_srcs)}개 선택)", expanded=False):
+                for src in upload_srcs:
+                    st.checkbox(
+                        src["title"][:26] + ("…" if len(src["title"]) > 26 else ""),
+                        key=f"ck_{src['id']}",
+                        value=st.session_state.get(f"ck_{src['id']}", True)
+                    )
+
+        # ── 웹 & 유튜브 토글 ─────────────────────────────────
         if web_srcs:
-            st.markdown('<div class="src-header">🌐 웹 & 유튜브</div>', unsafe_allow_html=True)
-            for src in web_srcs:
-                icon = "▶️" if src.get("type") == "youtube" else "📰"
-                st.checkbox(f"{icon} {src['title'][:22]}{'…' if len(src['title'])>22 else ''}",
-                            key=f"ck_{src['id']}", value=st.session_state.get(f"ck_{src['id']}", True))
+            web_active = sum(1 for s in web_srcs if st.session_state.get(f"ck_{s['id']}", True))
+            with st.expander(f"🌐 웹 & 유튜브  ({web_active}/{len(web_srcs)}개 선택)", expanded=False):
+                for src in web_srcs:
+                    icon = "▶️" if src.get("type") == "youtube" else "📰"
+                    st.checkbox(
+                        f"{icon} {src['title'][:24]}{'…' if len(src['title'])>24 else ''}",
+                        key=f"ck_{src['id']}",
+                        value=st.session_state.get(f"ck_{src['id']}", True)
+                    )
+
         if not pdfs and not st.session_state.web_sources:
             st.info("소스가 없습니다.\n관리자가 추가합니다.")
 
@@ -1049,14 +1438,91 @@ with tab_chat:
             st.session_state.messages.append({"role": "assistant", "content": full_text, "time": now_str()})
             st.rerun()
 
-        # 빠른 질문 — 박스 카드형
-        if not st.session_state.messages:
-            examples = [
+        # ── 정책별 빠른 질문 예시 ─────────────────────────────
+        POLICY_EXAMPLES = {
+            1: [
+                ("🏛️", "읍면동장 주민선출제의\n핵심 내용은 무엇인가요?"),
+                ("📋", "전문직위제 도입 시\n기대 효과는 무엇인가요?"),
+                ("🔍", "타 지역 선출제\n운영 사례를 알려주세요"),
+                ("💡", "주민선출제 도입의\n장단점을 비교해주세요"),
+            ],
+            2: [
+                ("🏘️", "마을공동체 재정자립을\n위한 핵심 방안은?"),
+                ("📋", "주민자치 재정 모델\n사례를 알려주세요"),
+                ("💰", "재정 자립도를 높이는\n구체적 방법은?"),
+                ("🌱", "공동체 기금 조성\n우수 사례는 무엇인가요?"),
+            ],
+            3: [
+                ("🗺️", "통합형 마을자치 체계의\n구조와 역할은?"),
+                ("📋", "마을자치 종합체계\n구성 방안을 알려주세요"),
+                ("🔗", "기존 자치 조직과의\n연계 방식은 무엇인가요?"),
+                ("💡", "통합 추진 시 예상\n과제와 해결책은?"),
+            ],
+            4: [
+                ("📜", "시민 제안 조례의\n주요 내용은 무엇인가요?"),
+                ("📋", "조례 제정 프로세스를\n단계별로 설명해주세요"),
+                ("🔍", "타 지역 시민참여\n조례 사례를 알려주세요"),
+                ("💡", "실효성 있는 조례\n만들기 핵심 요소는?"),
+            ],
+            5: [
+                ("🏢", "공공공간 활용을 통한\n자치 연결 방식은?"),
+                ("📋", "유휴 공간을 자치\n거점으로 만드는 방법은?"),
+                ("🔍", "성공적인 공공공간\n활용 사례를 알려주세요"),
+                ("💡", "주민 주도 공간 운영\n모델은 무엇인가요?"),
+            ],
+            6: [
+                ("🏛️", "전남광주 통합지원기관의\n역할과 기능은?"),
+                ("📋", "지원기관 운영 체계를\n어떻게 설계하나요?"),
+                ("🔍", "유사 통합지원기관\n운영 사례를 알려주세요"),
+                ("💡", "지원기관 설립 시\n핵심 고려 사항은?"),
+            ],
+            7: [
+                ("📊", "주민자치회 성장 단계\n구분 기준은 무엇인가요?"),
+                ("📋", "단계별 지원 체계\n내용을 알려주세요"),
+                ("🔍", "성장 단계 지원\n우수 사례는 무엇인가요?"),
+                ("💡", "자치회 역량 강화를\n위한 핵심 방안은?"),
+            ],
+            8: [
+                ("👥", "주민자치회 대표성\n강화 방안은 무엇인가요?"),
+                ("📋", "시범사업 내용과\n추진 일정을 알려주세요"),
+                ("🔍", "대표성 강화 성공\n사례를 소개해주세요"),
+                ("💡", "다양한 계층 참여를\n확대하는 방법은?"),
+            ],
+            9: [
+                ("🎪", "전국 주민자치 박람회\n유치 의의는 무엇인가요?"),
+                ("📋", "박람회 유치 추진\n전략과 계획을 알려주세요"),
+                ("🔍", "과거 박람회 개최\n성과 사례는?"),
+                ("💡", "지역 홍보 및 자치\n브랜드 효과는 무엇인가요?"),
+            ],
+            10: [
+                ("🎓", "시민주권 사관학교의\n핵심 교육 내용은?"),
+                ("📋", "네트워크 구축 방안을\n구체적으로 알려주세요"),
+                ("🔍", "유사 시민교육\n사례를 소개해주세요"),
+                ("💡", "사관학교 졸업 후\n연계 활동 방안은?"),
+            ],
+            11: [
+                ("🌆", "도시농촌 상생형\n생활권 모델이란?"),
+                ("📋", "통합 생활권 설계\n핵심 원칙을 알려주세요"),
+                ("🔍", "도농 상생 우수\n사례를 소개해주세요"),
+                ("💡", "주민 생활 서비스\n균형 방안은 무엇인가요?"),
+            ],
+            12: [
                 ("💬", "마을활동가 인정 방식을\n지역별로 비교해주세요"),
                 ("📋", "활동가 역량 기준은\n어떻게 정의되나요?"),
                 ("🔗", "기회소득과 인정체계\n연계 방안은?"),
                 ("🌟", "우수 사례와 정책 제언을\n알려주세요"),
-            ]
+            ],
+        }
+        _pol_num = int(policy_num(selected_policy)) if policy_num(selected_policy).isdigit() else 0
+        examples = POLICY_EXAMPLES.get(_pol_num, [
+            ("💬", "이 정책의 핵심 내용을\n요약해 주세요"),
+            ("📋", "주요 쟁점과 과제를\n알려주세요"),
+            ("🔍", "타 지역 유사 정책\n사례를 소개해주세요"),
+            ("💡", "실행을 위한 정책\n제언을 해주세요"),
+        ])
+
+        # 빠른 질문 — 박스 카드형
+        if not st.session_state.messages:
             st.markdown('<p style="font-size:.82rem;font-weight:700;color:#888;margin:14px 0 6px">💡 질문 예시를 눌러보세요</p>', unsafe_allow_html=True)
             c1, c2 = st.columns(2, gap="small")
             for i, (icon, label) in enumerate(examples):
@@ -1177,6 +1643,61 @@ if st.session_state.is_admin:
                             st.success(f"✅ {title[:40]}"); st.rerun()
                         except Exception as e: st.error(f"실패: {e}")
                 else: st.warning("https://... 형식으로 입력하세요.")
+
+            # ── CSV 파일 업로드로 일괄 추가 ─────────────────────
+            st.divider()
+            st.markdown("##### 📂 CSV 파일로 URL 일괄 등록")
+            st.caption("CSV 파일 형식: `URL` 열 필수, `제목` 열 선택 (첫 행 = 헤더)")
+
+            # CSV 샘플 다운로드
+            sample_csv = "URL,제목\nhttps://example.com/article1,기사 제목 예시\nhttps://www.youtube.com/watch?v=xxxxx,유튜브 제목 예시\n"
+            st.download_button("📥 CSV 양식 다운로드", data=sample_csv,
+                file_name="소스_URL_양식.csv", mime="text/csv", use_container_width=True, key="csv_sample_dl")
+
+            csv_file = st.file_uploader("CSV 파일 선택 (.csv)", type=["csv"],
+                key="csv_uploader", label_visibility="collapsed")
+            if csv_file:
+                import csv as csv_mod
+                import io as _io
+                try:
+                    content = csv_file.read().decode("utf-8-sig")
+                    reader = list(csv_mod.DictReader(_io.StringIO(content)))
+                    # 헤더 정규화
+                    def _norm(row):
+                        url_val = next((v for k, v in row.items() if "url" in k.lower()), None)
+                        title_val = next((v for k, v in row.items() if "제목" in k or "title" in k.lower()), None)
+                        return url_val, title_val
+                    valid_rows = [(u, t) for u, t in (_norm(r) for r in reader)
+                                  if u and str(u).strip().startswith("http")]
+                    st.info(f"📋 {len(valid_rows)}개 URL 감지됨")
+                    for i, (u, t) in enumerate(valid_rows[:15]):
+                        icon = "▶️" if "youtube" in str(u) else "🔗"
+                        st.markdown(f"`{i+1}` {icon} {str(u)[:70]}" + (f" — *{t}*" if t else ""))
+                    if len(valid_rows) > 15: st.caption(f"… 외 {len(valid_rows)-15}개")
+                    if st.button("✅ CSV 소스 전체 추가", type="primary", use_container_width=True, key="csv_add_all"):
+                        existing_ids = {s["id"] for s in st.session_state.web_sources}
+                        added, skipped, failed = 0, 0, 0
+                        prog = st.progress(0, text="추가 중...")
+                        for i, (url, hint_title) in enumerate(valid_rows):
+                            url = str(url).strip(); fid = str(abs(hash(url)))[:10]
+                            if fid in existing_ids: skipped += 1
+                            else:
+                                try:
+                                    is_yt = "youtube.com" in url or "youtu.be" in url
+                                    if is_yt: title, text = fetch_youtube(url); stype = "youtube"
+                                    else: title, text = fetch_article(url); stype = "article"
+                                    if hint_title and str(hint_title).strip(): title = str(hint_title).strip()
+                                    ns = {"id": fid, "type": stype, "title": title, "url": url, "text": text[:20000]}
+                                    st.session_state.web_sources.append(ns)
+                                    st.session_state[f"ck_{fid}"] = True
+                                    existing_ids.add(fid); added += 1
+                                except: failed += 1
+                            prog.progress((i+1)/len(valid_rows), text=f"{i+1}/{len(valid_rows)} 처리 중")
+                        save_sources(selected_policy, st.session_state.web_sources)
+                        prog.empty(); st.success(f"✅ 추가 {added} · 스킵 {skipped} · 실패 {failed}"); st.rerun()
+                except Exception as e:
+                    st.error(f"CSV 읽기 오류: {e}")
+
             st.divider()
             st.markdown("##### 키워드 검색")
             k1, k2 = st.columns([4, 1])
